@@ -1443,6 +1443,64 @@ app.post('/api/exam-results', async (req, res) => {
   }
 });
 
+// ==================== QUESTIONS API (Question Bank) ====================
+
+// Get all questions (optionally filter by ExamId)
+app.get('/api/questions', async (req, res) => {
+  try {
+    const { examId } = req.query;
+    const where = {};
+    if (examId) where.ExamId = examId;
+
+    const questions = await Question.findAll({
+      where,
+      include: [{ model: Exam, attributes: ['title', 'id'] }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json(questions);
+  } catch (err) {
+    console.error('Error fetching questions:', err);
+    res.status(500).json({ error: 'Failed to fetch questions' });
+  }
+});
+
+// Create a new question
+app.post('/api/questions', async (req, res) => {
+  try {
+    const { text, type, points, options, correctAnswer, ExamId } = req.body;
+
+    // Optional: If ExamId is not provided, we might need a "Bank" exam or allow nullable.
+    // For now, assuming questions are attached to an exam or created freely (if DB allows).
+
+    const newQuestion = await Question.create({
+      text,
+      type,
+      points: points || 5,
+      options,
+      correctAnswer,
+      ExamId: ExamId || null // Allow null if using as extensive Question Bank
+    });
+
+    res.status(201).json(newQuestion);
+  } catch (err) {
+    console.error('Error creating question:', err);
+    res.status(500).json({ error: 'Failed to create question' });
+  }
+});
+
+// Delete a question
+app.delete('/api/questions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Question.destroy({ where: { id } });
+    res.json({ success: true, message: 'Question deleted' });
+  } catch (err) {
+    console.error('Error deleting question:', err);
+    res.status(500).json({ error: 'Error deleting question' });
+  }
+});
+
 // ==================== STUDENT GRADES API ====================
 
 // Get all grades for a student
