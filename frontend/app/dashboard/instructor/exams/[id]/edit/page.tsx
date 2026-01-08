@@ -252,6 +252,16 @@ export default function EditExamPage() {
                         >
                             {saving ? 'Kaydediliyor...' : '💾 Değişiklikleri Kaydet'}
                         </Button>
+
+                        <Button
+                            variant="ghost"
+                            className="w-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            onClick={handleAddDemoQuestions}
+                            disabled={saving}
+                        >
+                            ⚡ 4 Test Sorusu Ekle (D Şıkkı)
+                        </Button>
+
                         <Button variant="secondary" className="w-full" onClick={() => router.back()}>
                             İptal
                         </Button>
