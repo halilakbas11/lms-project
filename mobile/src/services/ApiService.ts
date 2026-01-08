@@ -6,7 +6,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 // Configure base URL - use environment variable for production
 // For Expo: EXPO_PUBLIC_API_URL
 // Default: local development IP
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.168.24.194:3001';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://lms-project-production-0d23.up.railway.app';
 
 class ApiService {
     private client: AxiosInstance;

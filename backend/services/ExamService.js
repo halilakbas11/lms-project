@@ -252,8 +252,9 @@ class ExamService {
      * Generate SEB config for exam
      */
     generateSEBConfig(exam) {
+        const frontendUrl = process.env.FRONTEND_URL || 'https://lms-project-kvta8qq9l-emilias-projects-3e4f0b81.vercel.app';
         return {
-            startURL: `http://localhost:3000/exam/${exam.id}`,
+            startURL: `${frontendUrl}/exam/${exam.id}`,
             examKey: Buffer.from(`${exam.id}-${Date.now()}`).toString('base64'),
             allowQuit: false,
             allowSpellCheck: false,
@@ -263,7 +264,7 @@ class ExamService {
             showTime: true,
             enableURLFilter: true,
             urlFilterRules: [{ expression: '*', action: 0 }],
-            allowedURLPatterns: ['localhost:3000/*'],
+            allowedURLPatterns: ['*vercel.app/*', '*railway.app/*'],
         };
     }
 }

@@ -23,8 +23,8 @@ const store = new Store({
     name: 'lms-desktop-config',
     defaults: {
         windowBounds: { width: 1400, height: 900 },
-        serverUrl: 'http://localhost:3000',
-        apiUrl: 'http://localhost:3001',
+        serverUrl: 'https://lms-project-kvta8qq9l-emilias-projects-3e4f0b81.vercel.app',
+        apiUrl: 'https://lms-project-production-0d23.up.railway.app',
         downloadPath: app.getPath('downloads'),
         offlineMode: false,
         lastSync: null
@@ -418,7 +418,7 @@ app.on('open-url', (event, url) => {
 app.on('web-contents-created', (event, contents) => {
     contents.on('will-navigate', (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
-        const allowedHosts = ['localhost', '127.0.0.1'];
+        const allowedHosts = ['localhost', '127.0.0.1', 'lms-project-kvta8qq9l-emilias-projects-3e4f0b81.vercel.app', 'lms-project-production-0d23.up.railway.app'];
 
         if (!allowedHosts.includes(parsedUrl.hostname)) {
             event.preventDefault();

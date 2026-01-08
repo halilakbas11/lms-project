@@ -12,7 +12,7 @@ const app = express();
 // CORS configuration for production
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:3001', 'http://10.168.24.194:3000'];
+  : ['http://localhost:3000', 'http://localhost:3001', 'https://lms-project-kvta8qq9l-emilias-projects-3e4f0b81.vercel.app'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -71,7 +71,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:*");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:* https://*.vercel.app https://*.railway.app");
   next();
 });
 
@@ -542,8 +542,9 @@ app.get('/api/exams/:id/seb-config', async (req, res) => {
       return res.status(404).json({ error: 'Sınav bulunamadı' });
     }
 
-    const startURL = `http://localhost:3000/exam/${req.params.id}`;
-    const quitURL = 'http://localhost:3000/dashboard/student';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://lms-project-kvta8qq9l-emilias-projects-3e4f0b81.vercel.app';
+    const startURL = `${frontendUrl}/exam/${req.params.id}`;
+    const quitURL = `${frontendUrl}/dashboard/student`;
 
     // URL Filtering Rules
     let urlFilterRules = '';
@@ -557,8 +558,9 @@ app.get('/api/exams/:id/seb-config', async (req, res) => {
         urlFilterRules += `<dict><key>action</key><integer>0</integer><key>expression</key><string>${url}</string><key>regex</key><false/></dict>`;
       });
     }
-    // Always allow localhost
-    urlFilterRules += `<dict><key>action</key><integer>1</integer><key>expression</key><string>localhost*</string><key>regex</key><false/></dict>`;
+    // Allow production URLs
+    urlFilterRules += `<dict><key>action</key><integer>1</integer><key>expression</key><string>*vercel.app*</string><key>regex</key><false/></dict>`;
+    urlFilterRules += `<dict><key>action</key><integer>1</integer><key>expression</key><string>*railway.app*</string><key>regex</key><false/></dict>`;
 
     // Build comprehensive SEB config
     const xmlConfig = `<?xml version="1.0" encoding="UTF-8"?>

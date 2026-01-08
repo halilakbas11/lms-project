@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const getApiUrl = () => {
-  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const url = process.env.NEXT_PUBLIC_API_URL || 'https://lms-project-production-0d23.up.railway.app';
   // Ensure URL starts with http:// or https://
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
