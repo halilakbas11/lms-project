@@ -1075,16 +1075,16 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           });
 
         })
-    })
-    .catch(err => {
-      console.error("Jimp Processing Error:", err);
-      // Return the ACTUAL error message for debugging
-      resolve({ valid: false, reason: "Görüntü işleme hatası: " + (err.message || err), errorCode: 'PROCESSING_ERROR' });
-    });
 
-} catch (err) {
-  resolve({ valid: false, reason: `Sistem hatası: ${err.message}`, errorCode: 'SYSTEM_ERROR' });
-}
+        .catch(err => {
+          console.error("Jimp Processing Error:", err);
+          // Return the ACTUAL error message for debugging
+          resolve({ valid: false, reason: "Görüntü işleme hatası: " + (err.message || err), errorCode: 'PROCESSING_ERROR' });
+        });
+
+    } catch (err) {
+      resolve({ valid: false, reason: `Sistem hatası: ${err.message}`, errorCode: 'SYSTEM_ERROR' });
+    }
   });
 }
 
