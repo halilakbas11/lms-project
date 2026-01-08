@@ -919,9 +919,42 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
             if (saturation > 0.20) colorfulPixels++;
           });
 
-          // ... (skipping quality checks updates for now to focus on coordinates) ...
+          // ERROR TOLERANCE: Kalite kontrollerini devre dışı bırakıyoruz (User Request)
+          // Her türlü görüntüyü işlemeye çalışacağız.
 
-          // --- DYNAMIC COORDINATES (PERCENTAGE BASED) ---
+          /*
+          if (colorfulRatio > 0.45) {
+            resolve({ valid: false, reason: `Görüntü optik form gibi görünmüyor (Renk: %${(colorfulRatio * 100).toFixed(0)})`, errorCode: 'INVALID_MATERIAL' });
+            return;
+          } else if (colorfulRatio > 0.30) {
+            warnings.push('Görüntüde fazla renk var');
+            qualityScore -= 20;
+          }
+
+          if (avgBrightness < 25) {
+            resolve({ valid: false, reason: "Ortam çok karanlık. Işığı artırın.", errorCode: 'TOO_DARK' });
+            return;
+          } else if (avgBrightness < 40) {
+            warnings.push('Düşük ışık algılandı');
+            qualityScore -= 15;
+          }
+
+          if (whiteRatio < 0.05) {
+            resolve({ valid: false, reason: "Kağıt algılanamadı. Formu düz yüzeye koyun.", errorCode: 'NO_PAPER' });
+            return;
+          } else if (whiteRatio < 0.10) {
+            warnings.push('Kağıt alanı küçük');
+            qualityScore -= 10;
+          }
+
+          // ERROR TOLERANCE: Kısmi okuma - en az %30 veya 1 soru okunmalı
+          const minRequired = Math.max(1, Math.floor(questionCount * 0.3));
+          if (questionsRead < minRequired) {
+             // DEVAM ET - Hataya düşürme, boş da olsa sonuç dön.
+             // resolve({ valid: false, reason: `Yeterli cevap algılanamadı (${questionsRead}/${questionCount})`, errorCode: 'INSUFFICIENT_ANSWERS', partialAnswers: answers });
+             // return;
+          }
+          */
           // Matches Mobile Overlay: Left 33.3%, Top 25%, Width 30%, Height 67.5%
 
           const startX = width * 0.333;
@@ -1042,14 +1075,16 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           });
 
         })
-        .catch(err => {
-          console.error("Jimp:", err);
-          resolve({ valid: false, reason: "Görüntü işlenirken hata oluştu", errorCode: 'PROCESSING_ERROR' });
-        });
+    })
+    .catch(err => {
+      console.error("Jimp Processing Error:", err);
+      // Return the ACTUAL error message for debugging
+      resolve({ valid: false, reason: "Görüntü işleme hatası: " + (err.message || err), errorCode: 'PROCESSING_ERROR' });
+    });
 
-    } catch (err) {
-      resolve({ valid: false, reason: `Sistem hatası: ${err.message}`, errorCode: 'SYSTEM_ERROR' });
-    }
+} catch (err) {
+  resolve({ valid: false, reason: `Sistem hatası: ${err.message}`, errorCode: 'SYSTEM_ERROR' });
+}
   });
 }
 
