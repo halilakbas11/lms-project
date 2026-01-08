@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, CSSProperties } from 'react';
+import { ReactNode, CSSProperties, MouseEventHandler } from 'react';
 
 interface CardProps {
     children: ReactNode;
@@ -8,6 +8,7 @@ interface CardProps {
     hover?: boolean;
     padding?: 'none' | 'sm' | 'md' | 'lg';
     style?: CSSProperties;
+    onClick?: MouseEventHandler<HTMLDivElement>;
 }
 
 export default function Card({
@@ -15,7 +16,8 @@ export default function Card({
     className = '',
     hover = true,
     padding = 'md',
-    style
+    style,
+    onClick
 }: CardProps) {
     const paddingStyles = {
         none: '',
@@ -34,7 +36,7 @@ export default function Card({
       ${hover ? 'hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5' : ''}
       ${paddingStyles[padding]}
       ${className}
-    `} style={style}>
+    `} style={style} onClick={onClick}>
             {children}
         </div>
     );
