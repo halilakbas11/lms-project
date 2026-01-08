@@ -8,6 +8,7 @@ interface OpticalResultProps {
     selectedStudent: any;
     selectedExam: any;
     detectedScore: number | null;
+    detectedAnswers: Record<string, string> | null;
     manualScore: string;
     loading: boolean;
     onManualScoreChange: (score: string) => void;
@@ -21,6 +22,7 @@ export const OpticalResult: React.FC<OpticalResultProps> = ({
     selectedStudent,
     selectedExam,
     detectedScore,
+    detectedAnswers,
     manualScore,
     loading,
     onManualScoreChange,
@@ -45,6 +47,7 @@ export const OpticalResult: React.FC<OpticalResultProps> = ({
             },
             result: {
                 detectedScore: detectedScore,
+                detectedAnswers: detectedAnswers,
                 manualScore: manualScore ? parseInt(manualScore) : null,
                 finalScore: manualScore ? parseInt(manualScore) : detectedScore
             }
@@ -90,6 +93,29 @@ export const OpticalResult: React.FC<OpticalResultProps> = ({
                 <Text style={styles.resultLabel}>{t('detected_score')}</Text>
                 <Text style={[styles.resultValue, { fontSize: 36 }]}>{detectedScore}/100</Text>
             </View>
+
+            {detectedAnswers && (
+                <View style={styles.resultCard}>
+                    <Text style={[styles.resultLabel, { marginBottom: 12 }]}>{t('detected_answers') || 'Tespit Edilen Cevaplar'}</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                        {Object.entries(detectedAnswers).map(([key, value]) => (
+                            <View key={key} style={{
+                                width: '18%',
+                                aspectRatio: 1,
+                                backgroundColor: '#f1f5f9',
+                                borderRadius: 8,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderWidth: 1,
+                                borderColor: '#e2e8f0'
+                            }}>
+                                <Text style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>S{key}</Text>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#0f172a' }}>{value || '-'}</Text>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+            )}
 
             <Text style={styles.manualLabel}>{t('manual_score_entry')}</Text>
             <TextInput

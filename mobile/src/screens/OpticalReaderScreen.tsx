@@ -36,6 +36,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
     const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [detectedScore, setDetectedScore] = useState<number | null>(null);
+    const [detectedAnswers, setDetectedAnswers] = useState<Record<string, string> | null>(null);
     const [manualScore, setManualScore] = useState('');
     const [loading, setLoading] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
@@ -97,7 +98,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
             try {
                 // Disable shutter sound with shutterSound: false
                 const photo = await cameraRef.current.takePictureAsync({
-                    quality: 0.7,
+                    quality: 0.5,
                     base64: true,
                     shutterSound: false
                 });
@@ -135,6 +136,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
                 setRetryCount(0);
                 // Backend successfully analyzed and scored the form
                 setDetectedScore(response.score);
+                setDetectedAnswers(response.answers || null);
                 setManualScore(response.score?.toString() || '');
                 Alert.alert(
                     t('success'),
@@ -217,6 +219,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
                         setSelectedStudent(null);
                         setCapturedImage(null);
                         setDetectedScore(null);
+                        setDetectedAnswers(null);
                     },
                 },
             ]);
@@ -269,7 +272,9 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
                         capturedImage={capturedImage}
                         selectedStudent={selectedStudent}
                         selectedExam={selectedExam}
+                        selectedExam={selectedExam}
                         detectedScore={detectedScore}
+                        detectedAnswers={detectedAnswers}
                         manualScore={manualScore}
                         loading={loading}
                         onManualScoreChange={setManualScore}

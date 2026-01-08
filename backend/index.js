@@ -1088,6 +1088,7 @@ app.post('/api/exams/:id/submit', express.json({ limit: '10mb' }), async (req, r
       return res.json({
         success: true,
         score: finalScore,
+        answers: detectedAnswers,
         message: `Optik form başarıyla doğrulandı. Puan: ${finalScore}`
       });
     }
