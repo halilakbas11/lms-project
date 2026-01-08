@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { DashboardLayout, PageHeader } from '../../components/layout';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
-import useElectron from '../../hooks/useElectron';
-import { useLanguage } from '../../i18n';
+import { DashboardLayout, PageHeader } from '@/app/components/layout';
+import Card from '@/app/components/ui/Card';
+import Button from '@/app/components/ui/Button';
+import useElectron from '@/app/hooks/useElectron';
+import { useLanguage } from '@/app/i18n';
 
 export default function SettingsPage() {
     const { t } = useLanguage();
@@ -100,9 +100,9 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-[var(--text-primary)]">Güncelleme Durumu:</span>
                                 <span className={`text-sm px-2 py-1 rounded ${updateStatus?.status === 'available' ? 'bg-blue-100 text-blue-700' :
-                                        updateStatus?.status === 'downloading' ? 'bg-yellow-100 text-yellow-700' :
-                                            updateStatus?.status === 'downloaded' ? 'bg-green-100 text-green-700' :
-                                                'bg-gray-100 text-gray-700'
+                                    updateStatus?.status === 'downloading' ? 'bg-yellow-100 text-yellow-700' :
+                                        updateStatus?.status === 'downloaded' ? 'bg-green-100 text-green-700' :
+                                            'bg-gray-100 text-gray-700'
                                     }`}>
                                     {updateStatus?.status === 'checking' && '🔍 Kontrol ediliyor...'}
                                     {updateStatus?.status === 'available' && `📥 Yeni sürüm: ${updateStatus.version}`}
