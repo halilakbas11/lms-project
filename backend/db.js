@@ -1,11 +1,23 @@
 const { Sequelize, DataTypes } = require('sequelize');
 
-// Docker'daki Postgres'e bağlanıyoruz
-const sequelize = new Sequelize('lms_database', 'admin', 'password123', {
-  host: 'localhost',
-  dialect: 'postgres',
-  logging: false
-});
+// Database connection - uses DATABASE_URL in production (Railway), local Postgres in dev
+const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    },
+    logging: false
+  })
+  : new Sequelize('lms_database', 'admin', 'password123', {
+    host: 'localhost',
+    dialect: 'postgres',
+    logging: false
+  });
+
 
 // 1. KULLANICI MODELİ (PDF Madde 8.1 ve 8.2 Tam Uyumlu)
 const User = sequelize.define('User', {
