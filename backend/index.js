@@ -577,7 +577,7 @@ app.get('/api/exams/:id/seb-config', async (req, res) => {
     <key>quitURL</key><string>${quitURL}</string>
     ${exam.sebQuitPassword ? `<key>hashedQuitPassword</key><string>${exam.sebQuitPassword}</string>` : ''}
     <key>ignoreExitKeys</key><true/>
-    <key>quitURLConfirm</key><true/>
+    <key>quitURLConfirm</key><false/>
     
     <!-- Security Settings (PDF Madde 11.1) -->
     <key>enableClipboard</key><${exam.sebEnableClipboard ? 'true' : 'false'}/>

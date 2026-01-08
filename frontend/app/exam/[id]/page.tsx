@@ -163,8 +163,8 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     };
 
     const handleSubmitExam = async () => {
-        if (!confirm('Sınavı bitirmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
-
+        // Otomatik kapanma için onay istemiyoruz (SEB modunda)
+        if (!isSebBrowser && !confirm('Sınavı bitirmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
         setSubmitting(true);
         try {
             const storedUser = localStorage.getItem('user');
@@ -179,15 +179,12 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
             alert("✅ Sınav Başarıyla Gönderildi!");
 
             // If in SEB browser (Electron app with SEB mode), exit the secure browser
-            if (isSebBrowser && typeof window !== 'undefined' && (window as any).electronAPI?.exitSebMode) {
-                try {
-                    await (window as any).electronAPI.exitSebMode('exam_completed');
-                } catch (e) {
-                    console.error('Failed to exit SEB mode:', e);
-                }
+            if (isSebBrowser) {
+                // SEB'yi kapatmak için özel URL'ye yönlendir (SEB bunu yakalar ve kapanır)
+                window.location.href = "http://seb-quit";
+            } else {
+                router.push('/dashboard/student');
             }
-
-            router.push('/dashboard/student');
         } catch (error) {
             console.error('Submit error:', error);
             alert("❌ Gönderim Hatası! Lütfen tekrar deneyin.");
