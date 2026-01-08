@@ -960,13 +960,19 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
               let zoneBright = 0;
               let pixels = 0;
 
-              image.scan(bubbleX, bubbleY, scanSize, scanSize, function (x, y, idx) {
-                const r = this.bitmap.data[idx + 0];
-                zoneBright += r;
-                pixels++;
-              });
+              // Boundary check for scan
+              if (bubbleX >= 0 && bubbleY >= 0 && bubbleX + scanSize < width && bubbleY + scanSize < height && scanSize > 0) {
+                image.scan(bubbleX, bubbleY, scanSize, scanSize, function (x, y, idx) {
+                  const r = this.bitmap.data[idx + 0];
+                  zoneBright += r;
+                  pixels++;
+                });
+              } else {
+                console.warn(`⚠️ OMR Scan Out of Bounds: x=${bubbleX} y=${bubbleY} size=${scanSize}`);
+              }
 
               const avgres = pixels > 0 ? zoneBright / pixels : 255;
+              // ... existing logic ...
 
               if (avgres < minBrightness) {
                 secondMinBrightness = minBrightness;
@@ -1009,11 +1015,14 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
               const color = (answers[q] === opt) ? 0x00FF00FF : 0xFF0000FF;
 
               // Simple box drawing (borders only)
-              for (let i = 0; i < scanSize; i++) {
-                image.setPixelColor(color, bubbleX + i, bubbleY); // Top
-                image.setPixelColor(color, bubbleX + i, bubbleY + scanSize - 1); // Bottom
-                image.setPixelColor(color, bubbleX, bubbleY + i); // Left
-                image.setPixelColor(color, bubbleX + scanSize - 1, bubbleY + i); // Right
+              // Ensure we don't draw outside image bounds
+              if (bubbleX >= 0 && bubbleY >= 0 && bubbleX + scanSize < width && bubbleY + scanSize < height) {
+                for (let i = 0; i < scanSize; i++) {
+                  image.setPixelColor(color, bubbleX + i, bubbleY); // Top
+                  image.setPixelColor(color, bubbleX + i, bubbleY + scanSize - 1); // Bottom
+                  image.setPixelColor(color, bubbleX, bubbleY + i); // Left
+                  image.setPixelColor(color, bubbleX + scanSize - 1, bubbleY + i); // Right
+                }
               }
             });
           }
@@ -1068,8 +1077,8 @@ app.post('/api/exams/:id/submit', express.json({ limit: '10mb' }), async (req, r
       const exam = await Exam.findByPk(req.params.id, { include: [Question] });
       if (!exam) return res.status(404).json({ success: false, message: 'Sınav bulunamadı' });
 
-      // En fazla 20 soru destekliyoruz performans için
-      let questionCount = Math.min(exam.Questions.length, 20);
+      // En fazla 10 soru destekliyoruz (Mobil arayüzdeki grid yapısı 10 satırlı)
+      let questionCount = Math.min(exam.Questions.length, 10);
 
       console.log(`📊 Veritabanındaki Soru Sayısı: ${exam.Questions.length}`);
 
