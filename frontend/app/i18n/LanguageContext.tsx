@@ -5,7 +5,7 @@ import { translations, Language, TranslationKey, languageNames } from './transla
 interface LanguageContextType {
     language: Language;
     setLanguage: (lang: Language) => void;
-    t: (key: TranslationKey) => string;
+    t: (key: string) => string;
     languageNames: typeof languageNames;
 }
 
@@ -29,8 +29,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('lms_language', lang);
     };
 
-    const t = (key: TranslationKey): string => {
-        return translations[language][key] || translations.tr[key] || key;
+    const t = (key: string): string => {
+        return (translations[language] as any)?.[key] || (translations.tr as any)?.[key] || key;
     };
 
     // Don't render until language is loaded to prevent hydration mismatch

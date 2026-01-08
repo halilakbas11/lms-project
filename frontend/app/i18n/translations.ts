@@ -424,6 +424,21 @@ export const translations = {
 
         // Export
         pdf_export_coming_soon: 'PDF dışa aktarma yakında gelecek!',
+
+        // Reports Page
+        reports_desc: 'Sistem raporlarını ve istatistiklerini görüntüleyin',
+        today: 'Bugün',
+        this_week: 'Bu Hafta',
+        this_month: 'Bu Ay',
+        this_year: 'Bu Yıl',
+        users_by_role: 'Role Göre Kullanıcılar',
+        statistics: 'İstatistikler',
+        active_students: 'Aktif Öğrenci',
+        active_instructors: 'Aktif Eğitmen',
+        system_info: 'Sistem Bilgisi',
+        database: 'Veritabanı',
+        backend: 'Arka Uç',
+        frontend: 'Ön Yüz',
     },
 
     en: {
@@ -845,6 +860,21 @@ export const translations = {
 
         // Export
         pdf_export_coming_soon: 'PDF export coming soon!',
+
+        // Reports Page
+        reports_desc: 'View system reports and statistics',
+        today: 'Today',
+        this_week: 'This Week',
+        this_month: 'This Month',
+        this_year: 'This Year',
+        users_by_role: 'Users by Role',
+        statistics: 'Statistics',
+        active_students: 'Active Students',
+        active_instructors: 'Active Instructors',
+        system_info: 'System Info',
+        database: 'Database',
+        backend: 'Backend',
+        frontend: 'Frontend',
     },
 
     jp: {
@@ -1276,8 +1306,9 @@ export const translations = {
 
 export type TranslationKey = keyof typeof translations.tr;
 
-export const getTranslation = (lang: Language, key: TranslationKey): string => {
-    return translations[lang][key] || translations.tr[key] || key;
+export const getTranslation = (lang: Language, key: string): string => {
+    const typedKey = key as TranslationKey;
+    return (translations[lang] as any)?.[typedKey] || (translations.tr as any)?.[typedKey] || key;
 };
 
 export const languageNames: Record<Language, string> = {
