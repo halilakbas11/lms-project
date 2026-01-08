@@ -1889,6 +1889,77 @@ app.delete('/api/notes/:id', async (req, res) => {
 
 // ==================== SUPER ADMIN API ====================
 
+// SEED DATA: 4 Test Questions (All Answer D) - User Request
+app.get('/api/admin/seed-test-questions', async (req, res) => {
+  try {
+    // 1. Find or Create a Test Exam
+    let exam = await Exam.findOne({ where: { title: 'Test Exam - OMR' } });
+    if (!exam) {
+      // Find a course to attach to
+      const course = await Course.findOne();
+      if (!course) return res.status(400).json({ error: 'No course found to attach exam to.' });
+
+      exam = await Exam.create({
+        title: 'Test Exam - OMR',
+        durationMinutes: 60,
+        CourseId: course.id,
+        isOpticalExam: true
+      });
+    }
+
+    // 2. Questions to Add (All Answer D)
+    const newQuestions = [
+      {
+        text: 'Aşağıdakilerden hangisi bir kara kutu test (black-box testing) tekniğidir?',
+        type: 'multiple_choice',
+        points: 10,
+        correctAnswer: 'D',
+        options: { A: 'Unit Test', B: 'Code Review', C: 'Static Analysis', D: 'Boundary Value Analysis (Doğru)', E: 'Path Testing' },
+        ExamId: exam.id
+      },
+      {
+        text: 'HTTP protokolünde "Not Found" hatasını ifade eden durum kodu hangisidir?',
+        type: 'multiple_choice',
+        points: 10,
+        correctAnswer: 'D',
+        options: { A: '200', B: '301', C: '500', D: '404 (Doğru)', E: '403' },
+        ExamId: exam.id
+      },
+      {
+        text: 'SQL dilinde tabloya yeni veri eklemek için kullanılan komut hangisidir?',
+        type: 'multiple_choice',
+        points: 10,
+        correctAnswer: 'D',
+        options: { A: 'SELECT', B: 'UPDATE', C: 'ALTER', D: 'INSERT (Doğru)', E: 'DROP' },
+        ExamId: exam.id
+      },
+      {
+        text: 'Aşağıdaki dosya uzantılarından hangisi sıkıştırılmış dosya formatıdır?',
+        type: 'multiple_choice',
+        points: 10,
+        correctAnswer: 'D',
+        options: { A: '.txt', B: '.jpg', C: '.mp3', D: '.zip (Doğru)', E: '.html' },
+        ExamId: exam.id
+      }
+    ];
+
+    // 3. Bulk Create
+    await Question.bulkCreate(newQuestions);
+
+    res.json({
+      success: true,
+      message: '4 Test Questions (Answer D) added successfully!',
+      exam: exam.title,
+      examId: exam.id,
+      questionsAdded: 4
+    });
+
+  } catch (err) {
+    console.error('Seed Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get system-wide statistics
 app.get('/api/admin/stats', async (req, res) => {
   try {
