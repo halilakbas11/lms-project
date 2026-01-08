@@ -903,7 +903,20 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           // Using a smaller sample scan for performance
           image.scan(0, 0, width, height, function (x, y, idx) {
             if (x % 20 !== 0 || y % 20 !== 0) return; // Sample less frequently for large images
-            // ... existing brightness logic can remain or be simplified ...
+            const r = this.bitmap.data[idx + 0];
+            const g = this.bitmap.data[idx + 1];
+            const b = this.bitmap.data[idx + 2];
+            const brightness = (r + g + b) / 3;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const saturation = max === 0 ? 0 : (max - min) / max;
+
+            totalBrightness += brightness;
+            totalSaturation += saturation;
+
+            // ERROR TOLERANCE: Daha gevşek beyaz algılama eşiği
+            if (brightness > 80 && saturation < 0.25) whitePixels++;
+            if (saturation > 0.20) colorfulPixels++;
           });
 
           // ... (skipping quality checks updates for now to focus on coordinates) ...
@@ -989,8 +1002,8 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           // Draw boxes around scanned zones to help user align camera
           for (let q = 1; q <= questionCount; q++) {
             ['A', 'B', 'C', 'D', 'E'].forEach((opt, idx) => {
-              const bubbleX = startX + (idx * gapX);
-              const bubbleY = startY + ((q - 1) * gapY);
+              const bubbleX = Math.floor(startX + (idx * gapX));
+              const bubbleY = Math.floor(startY + ((q - 1) * gapY));
 
               // Color: Green if this was the selected answer, Red otherwise
               const color = (answers[q] === opt) ? 0x00FF00FF : 0xFF0000FF;
