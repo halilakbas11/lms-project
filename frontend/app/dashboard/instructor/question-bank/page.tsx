@@ -348,7 +348,9 @@ export default function QuestionBankPage() {
                                             <input
                                                 type={newQuestion.type === 'multiple_choice' ? 'radio' : 'checkbox'}
                                                 name="correct"
-                                                className="mt-3"
+                                                className="mt-3 w-4 h-4"
+                                                checked={newQuestion.correctAnswer === String.fromCharCode(65 + i)}
+                                                onChange={() => setNewQuestion({ ...newQuestion, correctAnswer: String.fromCharCode(65 + i) })}
                                             />
                                             <input
                                                 type="text"
