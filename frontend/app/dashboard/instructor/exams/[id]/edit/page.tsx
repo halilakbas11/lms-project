@@ -78,6 +78,18 @@ export default function EditExamPage() {
         setSaving(false);
     };
 
+    const handleAddDemoQuestions = async () => {
+        if (!confirm('Bu sınava 5 adet karışık test sorusu eklenecek. Onaylıyor musunuz?')) return;
+        setSaving(true);
+        try {
+            await axios.get(`/api/admin/seed-test-questions?examId=${examId}`);
+            alert('5 soru başarıyla eklendi!');
+            // Refresh logic or redirect
+        } catch (err) {
+            alert('Hata oluştu.');
+        }
+        setSaving(false);
+    };
     const handleDelete = async () => {
         if (!confirm('Bu sınavı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
         try {
@@ -259,7 +271,7 @@ export default function EditExamPage() {
                             onClick={handleAddDemoQuestions}
                             disabled={saving}
                         >
-                            ⚡ 4 Test Sorusu Ekle (D Şıkkı)
+                            ⚡ 5 Test Sorusu Ekle (Karışık)
                         </Button>
 
                         <Button variant="secondary" className="w-full" onClick={() => router.back()}>

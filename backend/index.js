@@ -1892,53 +1892,69 @@ app.delete('/api/notes/:id', async (req, res) => {
 // SEED DATA: 4 Test Questions (All Answer D) - User Request
 app.get('/api/admin/seed-test-questions', async (req, res) => {
   try {
-    // 1. Find or Create a Test Exam
-    let exam = await Exam.findOne({ where: { title: 'Test Exam - OMR' } });
-    if (!exam) {
-      // Find a course to attach to
-      const course = await Course.findOne();
-      if (!course) return res.status(400).json({ error: 'No course found to attach exam to.' });
+    const { examId } = req.query; // Allow targeted seeding
+    let exam;
 
-      exam = await Exam.create({
-        title: 'Test Exam - OMR',
-        durationMinutes: 60,
-        CourseId: course.id,
-        isOpticalExam: true
-      });
+    if (examId) {
+      exam = await Exam.findByPk(examId);
+      if (!exam) return res.status(404).json({ error: 'Exam not found' });
+    } else {
+      // 1. Find or Create a Test Exam (Fallback)
+      exam = await Exam.findOne({ where: { title: 'Test Exam - OMR' } });
+      if (!exam) {
+        // Find a course to attach to
+        const course = await Course.findOne();
+        if (!course) return res.status(400).json({ error: 'No course found to attach exam to.' });
+
+        exam = await Exam.create({
+          title: 'Test Exam - OMR',
+          durationMinutes: 60,
+          CourseId: course.id,
+          isOpticalExam: true
+        });
+      }
     }
 
-    // 2. Questions to Add (All Answer D)
+    // 2. Questions to Add (5 Diverse Questions - User Request)
     const newQuestions = [
       {
-        text: 'Aşağıdakilerden hangisi bir kara kutu test (black-box testing) tekniğidir?',
+        text: 'Türkiye\'nin başkenti neresidir?',
         type: 'multiple_choice',
         points: 10,
-        correctAnswer: 'D',
-        options: { A: 'Unit Test', B: 'Code Review', C: 'Static Analysis', D: 'Boundary Value Analysis (Doğru)', E: 'Path Testing' },
+        correctAnswer: 'C',
+        options: { A: 'İstanbul', B: 'İzmir', C: 'Ankara (Doğru)', D: 'Antalya', E: 'Bursa' },
         ExamId: exam.id
       },
       {
-        text: 'HTTP protokolünde "Not Found" hatasını ifade eden durum kodu hangisidir?',
+        text: 'Hangi gezegen "Kızıl Gezegen" olarak bilinir?',
         type: 'multiple_choice',
         points: 10,
-        correctAnswer: 'D',
-        options: { A: '200', B: '301', C: '500', D: '404 (Doğru)', E: '403' },
+        correctAnswer: 'B',
+        options: { A: 'Venüs', B: 'Mars (Doğru)', C: 'Jüpiter', D: 'Satürn', E: 'Neptün' },
         ExamId: exam.id
       },
       {
-        text: 'SQL dilinde tabloya yeni veri eklemek için kullanılan komut hangisidir?',
+        text: 'Suyun kimyasal formülü nedir?',
         type: 'multiple_choice',
         points: 10,
-        correctAnswer: 'D',
-        options: { A: 'SELECT', B: 'UPDATE', C: 'ALTER', D: 'INSERT (Doğru)', E: 'DROP' },
+        correctAnswer: 'A',
+        options: { A: 'H2O (Doğru)', B: 'CO2', C: 'O2', D: 'NaCl', E: 'H2SO4' },
         ExamId: exam.id
       },
       {
-        text: 'Aşağıdaki dosya uzantılarından hangisi sıkıştırılmış dosya formatıdır?',
+        text: 'Fonksiyonel programlamada "side-effect" olmaması durumuna ne denir?',
+        type: 'multiple_choice',
+        points: 10,
+        correctAnswer: 'E',
+        options: { A: 'Recursion', B: 'Loop', C: 'Object', D: 'Class', E: 'Immutability / Pure (Doğru)' },
+        ExamId: exam.id
+      },
+      {
+        text: 'Bir byte kaç bit\'ten oluşur?',
         type: 'multiple_choice',
         points: 10,
         correctAnswer: 'D',
-        options: { A: '.txt', B: '.jpg', C: '.mp3', D: '.zip (Doğru)', E: '.html' },
+        options: { A: '4', B: '16', C: '32', D: '8 (Doğru)', E: '64' },
         ExamId: exam.id
       }
     ];
@@ -1948,10 +1964,10 @@ app.get('/api/admin/seed-test-questions', async (req, res) => {
 
     res.json({
       success: true,
-      message: '4 Test Questions (Answer D) added successfully!',
+      message: '5 Test Questions added successfully!',
       exam: exam.title,
       examId: exam.id,
-      questionsAdded: 4
+      questionsAdded: 5
     });
 
   } catch (err) {
