@@ -921,6 +921,8 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
 
           // ERROR TOLERANCE: Kalite kontrollerini devre dışı bırakıyoruz (User Request)
           // Her türlü görüntüyü işlemeye çalışacağız.
+          let qualityScore = 100;
+          const warnings = [];
 
           /*
           if (colorfulRatio > 0.45) {
