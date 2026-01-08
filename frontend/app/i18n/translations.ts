@@ -197,7 +197,6 @@ export const translations = {
         legend_fail: 'Kaldı',
 
         // Dynamic content keys
-        database: 'Veritanı',
         algorithms: 'Algoritmalar',
 
         // Additional Course keys
@@ -635,7 +634,6 @@ export const translations = {
         optical_active: 'Optical',
 
         // Dynamic content keys
-        database: 'Database',
         algorithms: 'Algorithms',
 
         // Optical
