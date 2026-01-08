@@ -12,7 +12,7 @@ const app = express();
 // CORS configuration for production
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:3001', 'https://lms-project-kvta8qq9l-emilias-projects-3e4f0b81.vercel.app', 'https://lms-project-zeta-one.vercel.app'];
+  : ['http://localhost:3000', 'http://localhost:3001', 'https://lms-project-git-main-emilias-projects-3e4f0b81.vercel.app', 'https://lms-project-zeta-one.vercel.app'];
 
 app.use(cors({
   origin: function (origin, callback) {
