@@ -860,8 +860,8 @@ function calculateSkewAngle(corners) {
   return angle;
 }
 
-// ORTHODOX OMR: Görüntü Analizi ve Cevap Okuma (Error Tolerance + Perspektif Düzeltme)
-async function analyzeAndReadForm(base64Image) {
+// ORTHODOX OMR: Görüntü Analizi ve Cevap Okuma (Error Tolerance// --- 6. OPTİK FORM İŞLEME PROTOTİPİ (Jimp ile) ---
+async function analyzeAndReadForm(base64Image, questionCount = 10) {
   return new Promise((resolve, reject) => {
     try {
       const buffer = Buffer.from(base64Image.replace(/^data:image\/\w+;base64,/, ""), 'base64');
@@ -954,7 +954,8 @@ async function analyzeAndReadForm(base64Image) {
           let totalConfidence = 0;
           let questionsRead = 0;
 
-          for (let q = 1; q <= 10; q++) {
+          // Use provided questionCount
+          for (let q = 1; q <= questionCount; q++) {
             let detectedOption = null;
             let minBrightness = 255;
             let secondMinBrightness = 255;
@@ -966,7 +967,7 @@ async function analyzeAndReadForm(base64Image) {
               let zoneBright = 0;
               let pixels = 0;
 
-              image.scan(bubbleX, bubbleY, 15, 15, function (x, y, idx) {
+              image.scan(bubbleX, bubbleY, 20, 20, function (x, y, idx) {
                 const r = this.bitmap.data[idx + 0];
                 zoneBright += r;
                 pixels++;
@@ -997,20 +998,47 @@ async function analyzeAndReadForm(base64Image) {
             }
           }
 
-          // ERROR TOLERANCE: Kısmi okuma - en az 3 soru okunmalı
-          if (questionsRead < 3) {
-            resolve({ valid: false, reason: `Yeterli cevap algılanamadı (${questionsRead}/10)`, errorCode: 'INSUFFICIENT_ANSWERS', partialAnswers: answers });
+          // ERROR TOLERANCE: Kısmi okuma - en az %30 veya 1 soru okunmalı
+          const minRequired = Math.max(1, Math.floor(questionCount * 0.3));
+          if (questionsRead < minRequired) {
+            resolve({ valid: false, reason: `Yeterli cevap algılanamadı (${questionsRead}/${questionCount})`, errorCode: 'INSUFFICIENT_ANSWERS', partialAnswers: answers });
             return;
           }
 
-          console.log("Detect Answers:", answers);
-          console.log(`Questions Read: ${questionsRead}/10`);
+          // --- DEBUG VISUALIZATION ---
+          // Draw boxes around scanned zones to help user align camera
+          for (let q = 1; q <= questionCount; q++) {
+            ['A', 'B', 'C', 'D', 'E'].forEach((opt, idx) => {
+              const bubbleX = startX + (idx * gapX);
+              const bubbleY = startY + ((q - 1) * gapY);
 
-          resolve({
-            valid: true,
-            answers,
-            metadata: { questionsRead, avgConfidence: Math.round(totalConfidence / questionsRead), qualityScore, warnings, confidences }
+              // Color: Green if this was the selected answer, Red otherwise
+              const color = (answers[q] === opt) ? 0x00FF00FF : 0xFF0000FF;
+
+              // Simple 20x20 box drawing (borders only)
+              for (let i = 0; i < 20; i++) {
+                image.setPixelColor(color, bubbleX + i, bubbleY); // Top
+                image.setPixelColor(color, bubbleX + i, bubbleY + 19); // Bottom
+                image.setPixelColor(color, bubbleX, bubbleY + i); // Left
+                image.setPixelColor(color, bubbleX + 19, bubbleY + i); // Right
+              }
+            });
+          }
+
+          image.getBase64(Jimp.MIME_JPEG, (err, debugBase64) => {
+            if (err) console.error("Debug image generation failed", err);
+
+            console.log("Detect Answers:", answers);
+            console.log(`Questions Read: ${questionsRead}/${questionCount}`);
+
+            resolve({
+              valid: true,
+              answers,
+              debugImage: debugBase64, // Return the annotated image
+              metadata: { questionsRead, avgConfidence: Math.round(totalConfidence / questionsRead), qualityScore, warnings, confidences }
+            });
           });
+
         })
         .catch(err => {
           console.error("Jimp:", err);
@@ -1043,8 +1071,23 @@ app.post('/api/exams/:id/submit', express.json({ limit: '10mb' }), async (req, r
     if (opticalImage) {
       console.log(`📸 Optik Form Analizi Başlıyor: Öğrenci ${studentId}`);
 
-      // Görüntüyü gerçek analizden geçir ve OKU
-      const analysis = await analyzeAndReadForm(opticalImage);
+      // ÖNCE SINAVI ÇEK (Soru sayısını öğrenmek için)
+      const exam = await Exam.findByPk(req.params.id, { include: [Question] });
+      if (!exam) return res.status(404).json({ success: false, message: 'Sınav bulunamadı' });
+
+      // En fazla 20 soru destekliyoruz performans için
+      let questionCount = Math.min(exam.Questions.length, 20);
+
+      console.log(`📊 Veritabanındaki Soru Sayısı: ${exam.Questions.length}`);
+
+      // Eğer hiç soru yoksa (Demo/Test modu) varsayılan 10 yap
+      if (questionCount === 0) {
+        console.log("⚠️ Sınavda soru bulunamadı, varsayılan 10 soru taranacak.");
+        questionCount = 10;
+      }
+
+      // Görüntüyü gerçek analizden geçir ve OKU (Dinamik soru sayısı ile)
+      const analysis = await analyzeAndReadForm(opticalImage, questionCount);
 
       if (!analysis.valid) {
         console.log(`❌ Analiz Başarısız: ${analysis.reason}`);
@@ -1056,13 +1099,12 @@ app.post('/api/exams/:id/submit', express.json({ limit: '10mb' }), async (req, r
 
       // ORTHODOX PUANLAMA (Okunan cevapları doğru cevaplarla karşılaştır)
       const detectedAnswers = analysis.answers || {};
-      const exam = await Exam.findByPk(req.params.id, { include: [Question] });
 
       let earnedPoints = 0;
       let totalPoints = 0;
 
-      // Soru sayısı kadar döngü (max 10 okuduk)
-      exam.Questions.slice(0, 10).forEach((q, idx) => {
+      // Soru sayısı kadar döngü
+      exam.Questions.slice(0, questionCount).forEach((q, idx) => {
         const qNum = idx + 1; // 1-based index
         totalPoints += q.points;
 
@@ -1089,6 +1131,7 @@ app.post('/api/exams/:id/submit', express.json({ limit: '10mb' }), async (req, r
         success: true,
         score: finalScore,
         answers: detectedAnswers,
+        debugImage: analysis.debugImage, // <--- Add this
         message: `Optik form başarıyla doğrulandı. Puan: ${finalScore}`
       });
     }
