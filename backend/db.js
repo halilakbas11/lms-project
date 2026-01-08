@@ -108,6 +108,15 @@ const Exam = sequelize.define('Exam', {
 // 5. SORU MODELİ (PDF Madde 10 - Soru Türleri)
 const Question = sequelize.define('Question', {
   text: { type: DataTypes.TEXT, allowNull: false }, // Soru metni
+
+  // Question Bank Metadata
+  category: { type: DataTypes.STRING, defaultValue: 'Genel' },
+  difficulty: {
+    type: DataTypes.ENUM('easy', 'medium', 'hard'),
+    defaultValue: 'medium'
+  },
+  tags: { type: DataTypes.JSON, defaultValue: [] }, // Array of strings
+
   points: { type: DataTypes.FLOAT, defaultValue: 5.0 }, // Soru puanı
 
   type: {
