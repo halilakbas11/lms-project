@@ -45,7 +45,7 @@ export default function GradebookPage() {
 
     const fetchCourses = async (userId: number) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/instructor/${userId}/courses`);
+            const res = await axios.get(`/api/instructor/${userId}/courses`);
             setCourses(res.data);
             if (res.data.length > 0) {
                 setSelectedCourseId(res.data[0].id);
@@ -60,7 +60,7 @@ export default function GradebookPage() {
 
     const fetchResults = async (userId: number) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/instructor/${userId}/results`);
+            const res = await axios.get(`/api/instructor/${userId}/results`);
             setResults(res.data);
         } catch (err) {
             console.error('Error fetching results:', err);

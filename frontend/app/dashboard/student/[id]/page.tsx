@@ -21,7 +21,7 @@ export default function StudentCourseDetail({ params }: { params: Promise<{ id: 
 
   useEffect(() => {
     if (id) {
-      axios.get(`http://localhost:3001/api/courses/${id}/exams`)
+      axios.get(`/api/courses/${id}/exams`)
         .then(res => setExams(res.data))
         .catch(err => console.error(err))
         .finally(() => setLoading(false));
@@ -57,8 +57,8 @@ export default function StudentCourseDetail({ params }: { params: Promise<{ id: 
             <Card key={i} className="flex items-center justify-between" padding="sm">
               <div className="flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${module.type === 'video' ? 'bg-red-100 dark:bg-red-900/30 text-red-500' :
-                    module.type === 'pdf' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-500' :
-                      'bg-purple-100 dark:bg-purple-900/30 text-purple-500'
+                  module.type === 'pdf' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-500' :
+                    'bg-purple-100 dark:bg-purple-900/30 text-purple-500'
                   }`}>
                   {module.type === 'video' ? '▶' : module.type === 'pdf' ? '📄' : '❓'}
                 </div>
@@ -110,8 +110,8 @@ export default function StudentCourseDetail({ params }: { params: Promise<{ id: 
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${exam.isOpticalExam
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-500'
-                      : 'bg-blue-100 dark:bg-blue-900/30 text-blue-500'
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-500'
+                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-500'
                     }`}>
                     📝
                   </div>
@@ -128,7 +128,7 @@ export default function StudentCourseDetail({ params }: { params: Promise<{ id: 
                   {exam.isOpticalExam ? (
                     <div className="text-right">
                       <a
-                        href={`http://localhost:3001/api/exams/${exam.id}/seb-config`}
+                        href={`/api/exams/${exam.id}/seb-config`}
                         className="btn-primary text-sm"
                       >
                         ⬇️ SEB Dosyasını İndir

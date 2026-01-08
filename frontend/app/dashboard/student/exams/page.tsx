@@ -45,7 +45,7 @@ export default function StudentExamsPage() {
     const fetchExams = async (studentId: number) => {
         try {
             // Get student's enrolled courses
-            const coursesRes = await axios.get(`http://localhost:3001/api/my-courses?userId=${studentId}`);
+            const coursesRes = await axios.get(`/api/my-courses?userId=${studentId}`);
             const courseIds = coursesRes.data.map((c: any) => c.id);
 
             if (courseIds.length === 0) {
@@ -55,7 +55,7 @@ export default function StudentExamsPage() {
             }
 
             // Get all exams and filter by enrolled courses
-            const examsRes = await axios.get('http://localhost:3001/api/exams');
+            const examsRes = await axios.get('/api/exams');
             const studentExams = examsRes.data.filter((e: any) => courseIds.includes(e.CourseId));
 
             // Add course info

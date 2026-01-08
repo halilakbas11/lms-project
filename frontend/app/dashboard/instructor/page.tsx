@@ -36,13 +36,13 @@ export default function InstructorDashboard() {
 
   const fetchData = async () => {
     try {
-      const coursesRes = await axios.get('http://localhost:3001/api/courses');
+      const coursesRes = await axios.get('/api/courses');
       setCourses(coursesRes.data);
 
       // Try to get pending requests count
       let pendingCount = 0;
       try {
-        const requestsRes = await axios.get('http://localhost:3001/api/access-requests');
+        const requestsRes = await axios.get('/api/access-requests');
         pendingCount = requestsRes.data.filter((r: any) => r.status === 'pending').length;
       } catch {
         // API might not exist yet
@@ -62,7 +62,7 @@ export default function InstructorDashboard() {
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3001/api/courses', { ...newCourse, instructorId: user?.id });
+      await axios.post('/api/courses', { ...newCourse, instructorId: user?.id });
       setShowModal(false);
       setNewCourse({ title: '', code: '', description: '' });
       fetchData();

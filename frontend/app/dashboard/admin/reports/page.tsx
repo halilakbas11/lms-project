@@ -33,9 +33,9 @@ export default function AdminReportsPage() {
     const fetchStats = async () => {
         try {
             const [usersRes, coursesRes, examsRes] = await Promise.all([
-                axios.get('http://localhost:3001/api/users'),
-                axios.get('http://localhost:3001/api/courses'),
-                axios.get('http://localhost:3001/api/exams')
+                axios.get('/api/users'),
+                axios.get('/api/courses'),
+                axios.get('/api/exams')
             ]);
 
             const users = usersRes.data;

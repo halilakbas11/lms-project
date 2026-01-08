@@ -38,7 +38,7 @@ export default function StudentGradesPage() {
 
     const fetchGrades = async (userId: number) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/student/${userId}/grades`);
+            const res = await axios.get(`/api/student/${userId}/grades`);
             setGrades(res.data);
         } catch (err) {
             console.error('Error fetching grades:', err);

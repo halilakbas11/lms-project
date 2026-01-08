@@ -43,7 +43,7 @@ export default function AccessRequestsPage() {
             if (user.role === 'instructor') params.set('instructorId', user.id);
             if (filter === 'pending') params.set('status', 'pending');
 
-            const res = await axios.get(`http://localhost:3001/api/access-requests?${params}`);
+            const res = await axios.get(`/api/access-requests?${params}`);
             setRequests(res.data);
         } catch (err) {
             console.error(err);
@@ -53,7 +53,7 @@ export default function AccessRequestsPage() {
     const handleRespond = async (id: number, status: 'approved' | 'rejected') => {
         setLoading(id);
         try {
-            await axios.put(`http://localhost:3001/api/access-requests/${id}/respond`, { status });
+            await axios.put(`/api/access-requests/${id}/respond`, { status });
             fetchRequests();
         } catch (err) {
             alert('İşlem başarısız');

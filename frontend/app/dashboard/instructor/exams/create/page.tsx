@@ -124,7 +124,7 @@ function CreateExamContent() {
 
     const fetchCourses = async (instructorId: number) => {
         try {
-            const res = await axios.get('http://localhost:3001/api/courses');
+            const res = await axios.get('/api/courses');
             const filtered = res.data.filter((c: any) =>
                 c.instructorId === instructorId || c.instructor?.id === instructorId
             );
@@ -144,7 +144,7 @@ function CreateExamContent() {
         setLoading(true);
         try {
             // Create exam
-            const examRes = await axios.post('http://localhost:3001/api/exams', {
+            const examRes = await axios.post('/api/exams', {
                 ...form,
                 startTime: form.startTime ? new Date(form.startTime).toISOString() : null,
                 endTime: form.endTime ? new Date(form.endTime).toISOString() : null,
@@ -157,7 +157,7 @@ function CreateExamContent() {
             if (questionsToAdd.length > 0) {
                 for (const q of questionsToAdd) {
                     try {
-                        await axios.post('http://localhost:3001/api/questions', {
+                        await axios.post('/api/questions', {
                             ExamId: examId,
                             text: q.text,
                             type: q.type,

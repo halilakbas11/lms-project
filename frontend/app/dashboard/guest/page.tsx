@@ -34,7 +34,7 @@ export default function GuestDashboard() {
 
   const fetchCourses = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/courses');
+      const res = await axios.get('/api/courses');
       setCourses(res.data);
     } catch (err) {
       console.error(err);

@@ -51,8 +51,8 @@ export default function StudentDashboard() {
   const fetchData = async (userId: number) => {
     try {
       const [enrolledRes, availableRes] = await Promise.all([
-        axios.get(`http://localhost:3001/api/my-courses?userId=${userId}`),
-        axios.get(`http://localhost:3001/api/available-courses?userId=${userId}`)
+        axios.get(`/api/my-courses?userId=${userId}`),
+        axios.get(`/api/available-courses?userId=${userId}`)
       ]);
       setEnrolledCourses(enrolledRes.data);
       setAvailableCourses(availableRes.data);
@@ -60,7 +60,7 @@ export default function StudentDashboard() {
       // Fetch upcoming exams for enrolled courses
       if (enrolledRes.data.length > 0) {
         const courseIds = enrolledRes.data.map((c: any) => c.id);
-        const examsRes = await axios.get('http://localhost:3001/api/exams');
+        const examsRes = await axios.get('/api/exams');
         const now = new Date();
         const upcoming = examsRes.data.filter((e: any) => {
           if (!courseIds.includes(e.CourseId)) return false;
@@ -79,7 +79,7 @@ export default function StudentDashboard() {
     setLoading(true);
 
     try {
-      await axios.post(`http://localhost:3001/api/courses/${selectedCourse.id}/request-access`, {
+      await axios.post(`/api/courses/${selectedCourse.id}/request-access`, {
         studentId: user.id,
         message: requestMessage
       });

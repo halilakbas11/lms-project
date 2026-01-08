@@ -34,7 +34,7 @@ export default function StudentCoursesPage() {
 
     const fetchCourses = async (studentId: number) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/my-courses?userId=${studentId}`);
+            const res = await axios.get(`/api/my-courses?userId=${studentId}`);
             setEnrolledCourses(res.data);
         } catch (err) {
             console.error(err);

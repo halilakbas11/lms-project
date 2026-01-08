@@ -68,7 +68,7 @@ export default function StudentNotesPage() {
     const fetchNotes = async (userId: number, category?: string) => {
         try {
             const params = category && category !== 'all' ? `&category=${category}` : '';
-            const res = await axios.get(`http://localhost:3001/api/notes?userId=${userId}${params}`);
+            const res = await axios.get(`/api/notes?userId=${userId}${params}`);
             setNotes(res.data);
         } catch (err) {
             console.error('Error fetching notes:', err);
@@ -77,7 +77,7 @@ export default function StudentNotesPage() {
 
     const fetchCourses = async (userId: number) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/my-courses?userId=${userId}`);
+            const res = await axios.get(`/api/my-courses?userId=${userId}`);
             setCourses(res.data);
         } catch (err) {
             console.error('Error fetching courses:', err);
@@ -117,7 +117,7 @@ export default function StudentNotesPage() {
 
         try {
             if (editingNote) {
-                await axios.put(`http://localhost:3001/api/notes/${editingNote.id}`, {
+                await axios.put(`/api/notes/${editingNote.id}`, {
                     userId: user.id,
                     title: noteTitle,
                     content: noteContent,
@@ -126,7 +126,7 @@ export default function StudentNotesPage() {
                     courseId: selectedCourseId
                 });
             } else {
-                await axios.post('http://localhost:3001/api/notes', {
+                await axios.post('/api/notes', {
                     userId: user.id,
                     title: noteTitle,
                     content: noteContent,
@@ -146,7 +146,7 @@ export default function StudentNotesPage() {
 
     const handleTogglePin = async (note: Note) => {
         try {
-            await axios.put(`http://localhost:3001/api/notes/${note.id}/pin`, {
+            await axios.put(`/api/notes/${note.id}/pin`, {
                 userId: user.id
             });
             fetchNotes(user.id, filter === 'all' ? undefined : filter);
@@ -159,7 +159,7 @@ export default function StudentNotesPage() {
         if (!confirm(t('confirm_delete_note'))) return;
 
         try {
-            await axios.delete(`http://localhost:3001/api/notes/${noteId}?userId=${user.id}`);
+            await axios.delete(`/api/notes/${noteId}?userId=${user.id}`);
             fetchNotes(user.id, filter === 'all' ? undefined : filter);
         } catch (err) {
             console.error('Error deleting note:', err);

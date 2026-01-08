@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/users');
+      const res = await axios.get('/api/users');
       setUsers(res.data);
 
       const usersData = res.data as User[];
@@ -110,10 +110,10 @@ export default function AdminDashboard() {
         const updateData: any = { name: formData.name, email: formData.email, role: formData.role };
         if (formData.password) updateData.password = formData.password;
 
-        await axios.put(`http://localhost:3001/api/users/${editingUser.id}`, updateData);
+        await axios.put(`/api/users/${editingUser.id}`, updateData);
       } else {
         // Create new user
-        const res = await axios.post('http://localhost:3001/api/users', formData);
+        const res = await axios.post('/api/users', formData);
         if (res.data.success === false) {
           setError(res.data.errors?.join(', ') || res.data.message);
           return;
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
 
     if (confirm(t('confirm_delete'))) {
       try {
-        await axios.delete(`http://localhost:3001/api/users/${id}?currentUserId=${currentUser?.id}`);
+        await axios.delete(`/api/users/${id}?currentUserId=${currentUser?.id}`);
         fetchUsers();
       } catch (err: any) {
         alert(err.response?.data?.message || t('error_delete'));

@@ -43,7 +43,7 @@ export default function EditExamPage() {
 
     const fetchExam = async () => {
         try {
-            const res = await axios.get('http://localhost:3001/api/exams');
+            const res = await axios.get('/api/exams');
             const found = res.data.find((e: any) => e.id === parseInt(examId));
             if (found) {
                 setExam(found);
@@ -66,7 +66,7 @@ export default function EditExamPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await axios.put(`http://localhost:3001/api/exams/${examId}`, {
+            await axios.put(`/api/exams/${examId}`, {
                 ...form,
                 startTime: form.startTime ? new Date(form.startTime).toISOString() : null,
                 endTime: form.endTime ? new Date(form.endTime).toISOString() : null,
@@ -81,7 +81,7 @@ export default function EditExamPage() {
     const handleDelete = async () => {
         if (!confirm('Bu sınavı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
         try {
-            await axios.delete(`http://localhost:3001/api/exams/${examId}`);
+            await axios.delete(`/api/exams/${examId}`);
             router.push('/dashboard/instructor/exams');
         } catch (err) {
             alert('Sınav silinirken bir hata oluştu.');

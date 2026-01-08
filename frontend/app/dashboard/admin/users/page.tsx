@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get('http://localhost:3001/api/users');
+            const res = await axios.get('/api/users');
             setUsers(res.data);
         } catch (err) {
             console.error(err);
@@ -93,9 +93,9 @@ export default function AdminUsersPage() {
             if (editingUser) {
                 const updateData: any = { name: formData.name, email: formData.email, role: formData.role };
                 if (formData.password) updateData.password = formData.password;
-                await axios.put(`http://localhost:3001/api/users/${editingUser.id}`, updateData);
+                await axios.put(`/api/users/${editingUser.id}`, updateData);
             } else {
-                await axios.post('http://localhost:3001/api/users', formData);
+                await axios.post('/api/users', formData);
             }
             setShowModal(false);
             fetchUsers();
@@ -111,7 +111,7 @@ export default function AdminUsersPage() {
         }
         if (confirm(t('confirm_delete'))) {
             try {
-                await axios.delete(`http://localhost:3001/api/users/${id}?currentUserId=${currentUser?.id}`);
+                await axios.delete(`/api/users/${id}?currentUserId=${currentUser?.id}`);
                 fetchUsers();
             } catch (err: any) {
                 alert(err.response?.data?.message || t('error_delete'));

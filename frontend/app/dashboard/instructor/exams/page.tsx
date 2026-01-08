@@ -46,11 +46,11 @@ export default function ExamsPage() {
     const fetchExams = async (instructorId: number) => {
         try {
             // First get instructor's courses
-            const coursesRes = await axios.get(`http://localhost:3001/api/instructor/${instructorId}/courses`);
+            const coursesRes = await axios.get(`/api/instructor/${instructorId}/courses`);
             const courseIds = coursesRes.data.map((c: any) => c.id);
 
             // Get all exams and filter by instructor's courses
-            const examsRes = await axios.get('http://localhost:3001/api/exams');
+            const examsRes = await axios.get('/api/exams');
             const instructorExams = examsRes.data.filter((e: any) => courseIds.includes(e.CourseId));
 
             // Get course info for each exam
@@ -64,7 +64,7 @@ export default function ExamsPage() {
             console.error(err);
             // Fallback: get all exams
             try {
-                const res = await axios.get('http://localhost:3001/api/exams');
+                const res = await axios.get('/api/exams');
                 setExams(res.data);
             } catch (e) {
                 console.error(e);

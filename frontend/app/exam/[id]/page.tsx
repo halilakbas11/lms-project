@@ -62,11 +62,11 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     const fetchExamWithQuestions = async () => {
         try {
             // Fetch exam details
-            const examRes = await axios.get(`http://localhost:3001/api/exams/${id}`);
+            const examRes = await axios.get(`/api/exams/${id}`);
             setExam(examRes.data);
 
             // Fetch questions for this exam
-            const questionsRes = await axios.get(`http://localhost:3001/api/exams/${id}/questions`);
+            const questionsRes = await axios.get(`/api/exams/${id}/questions`);
             const fetchedQuestions = questionsRes.data || [];
 
             // If no questions in DB, use the exam's Questions array
@@ -147,7 +147,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
                 const storedUser = localStorage.getItem('user');
                 const userId = storedUser ? JSON.parse(storedUser).id : 1;
 
-                axios.post('http://localhost:3001/api/exams/log', {
+                axios.post('/api/exams/log', {
                     studentId: userId,
                     examId: id,
                     imageSnapshot: imageSrc
@@ -170,7 +170,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
             const storedUser = localStorage.getItem('user');
             const userId = storedUser ? JSON.parse(storedUser).id : 1;
 
-            await axios.post(`http://localhost:3001/api/exams/${id}/submit`, {
+            await axios.post(`/api/exams/${id}/submit`, {
                 studentId: userId,
                 answers: answers,
                 opticalImage: imgSrc
@@ -252,7 +252,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
                     <h1 className="text-2xl font-bold text-gray-800 mb-2">🔒 Güvenli Tarayıcı Gerekiyor</h1>
                     <p className="text-gray-600 mb-6">Bu sınava ({exam.title}) sadece SEB ile girebilirsiniz.</p>
                     <a
-                        href={`http://localhost:3001/api/exams/${id}/seb-config`}
+                        href={`/api/exams/${id}/seb-config`}
                         className="block w-full bg-red-600 text-white font-bold py-3 rounded hover:bg-red-700 transition shadow-lg"
                     >
                         ⬇️ Sınav Giriş Dosyasını İndir (.seb)

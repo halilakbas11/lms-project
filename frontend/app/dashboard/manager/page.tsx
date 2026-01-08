@@ -48,7 +48,7 @@ export default function ManagerDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/users');
+      const res = await axios.get('/api/users');
       setUsers(res.data);
     } catch (err) {
       console.error(err);
@@ -70,7 +70,7 @@ export default function ManagerDashboard() {
       return;
     }
     try {
-      const res = await axios.post('http://localhost:3001/api/users', newUser);
+      const res = await axios.post('/api/users', newUser);
       if (res.data.success === false) {
         setError(res.data.errors?.join(', ') || res.data.message);
         return;
@@ -91,7 +91,7 @@ export default function ManagerDashboard() {
     }
     if (confirm(t('confirm_delete'))) {
       try {
-        await axios.delete(`http://localhost:3001/api/users/${id}?currentUserId=${currentUser?.id}`);
+        await axios.delete(`/api/users/${id}?currentUserId=${currentUser?.id}`);
         fetchUsers();
       } catch (err: any) {
         alert(err.response?.data?.message || t('error'));

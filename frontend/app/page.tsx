@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   const performLogin = async (email: string, password: string | null, provider: string) => {
     try {
-      const res = await axios.post('http://localhost:3001/api/login', { email, password, provider });
+      const res = await axios.post('/api/login', { email, password, provider });
       if (res.data.success) {
         localStorage.setItem('user', JSON.stringify(res.data.user));
         const role = res.data.user.role;

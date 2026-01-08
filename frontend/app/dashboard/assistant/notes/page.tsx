@@ -45,7 +45,7 @@ export default function AssistantNotesPage() {
 
     const fetchNotes = async (userId: number) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/notes?userId=${userId}`);
+            const res = await axios.get(`/api/notes?userId=${userId}`);
             setNotes(res.data);
         } catch (err) { console.error(err); }
     };
@@ -68,9 +68,9 @@ export default function AssistantNotesPage() {
         try {
             const data = { userId: user.id, title: noteTitle, content: noteContent, color: noteColor, category: 'personal' };
             if (editingNote) {
-                await axios.put(`http://localhost:3001/api/notes/${editingNote.id}`, data);
+                await axios.put(`/api/notes/${editingNote.id}`, data);
             } else {
-                await axios.post('http://localhost:3001/api/notes', data);
+                await axios.post('/api/notes', data);
             }
             setShowModal(false);
             fetchNotes(user.id);
@@ -80,7 +80,7 @@ export default function AssistantNotesPage() {
 
     const handleTogglePin = async (note: Note) => {
         try {
-            await axios.put(`http://localhost:3001/api/notes/${note.id}/pin`, { userId: user.id });
+            await axios.put(`/api/notes/${note.id}/pin`, { userId: user.id });
             fetchNotes(user.id);
         } catch (err) { console.error(err); }
     };
@@ -88,7 +88,7 @@ export default function AssistantNotesPage() {
     const handleDeleteNote = async (noteId: number) => {
         if (!confirm(t('confirm_delete_note'))) return;
         try {
-            await axios.delete(`http://localhost:3001/api/notes/${noteId}?userId=${user.id}`);
+            await axios.delete(`/api/notes/${noteId}?userId=${user.id}`);
             fetchNotes(user.id);
         } catch (err) { console.error(err); }
     };

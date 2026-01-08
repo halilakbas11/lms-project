@@ -38,7 +38,7 @@ export default function ExamSecurityProvider({
     // Log security violation to backend
     const logViolation = useCallback(async (eventType: ViolationType, metadata?: object) => {
         try {
-            await axios.post(`http://localhost:3001/api/exams/${examId}/security-violation`, {
+            await axios.post(`/api/exams/${examId}/security-violation`, {
                 studentId,
                 eventType,
                 metadata: {

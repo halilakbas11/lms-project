@@ -67,19 +67,19 @@ export default function InstructorNotesPage() {
     const fetchNotes = async (userId: number, category?: string) => {
         try {
             const params = category && category !== 'all' ? `&category=${category}` : '';
-            const res = await axios.get(`http://localhost:3001/api/notes?userId=${userId}${params}`);
+            const res = await axios.get(`/api/notes?userId=${userId}${params}`);
             setNotes(res.data);
         } catch (err) { console.error(err); }
     };
 
     const fetchCourses = async (userId: number) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/instructor/${userId}/courses`);
+            const res = await axios.get(`/api/instructor/${userId}/courses`);
             setCourses(res.data);
             // Fetch exams for all courses
             const allExams: Exam[] = [];
             for (const course of res.data) {
-                const examRes = await axios.get(`http://localhost:3001/api/courses/${course.id}/exams`);
+                const examRes = await axios.get(`/api/courses/${course.id}/exams`);
                 allExams.push(...examRes.data.map((e: any) => ({ ...e, CourseId: course.id })));
             }
             setExams(allExams);
@@ -117,9 +117,9 @@ export default function InstructorNotesPage() {
                 courseId: selectedCourseId, examId: selectedExamId
             };
             if (editingNote) {
-                await axios.put(`http://localhost:3001/api/notes/${editingNote.id}`, data);
+                await axios.put(`/api/notes/${editingNote.id}`, data);
             } else {
-                await axios.post('http://localhost:3001/api/notes', data);
+                await axios.post('/api/notes', data);
             }
             setShowModal(false);
             fetchNotes(user.id, filter === 'all' ? undefined : filter);
@@ -129,7 +129,7 @@ export default function InstructorNotesPage() {
 
     const handleTogglePin = async (note: Note) => {
         try {
-            await axios.put(`http://localhost:3001/api/notes/${note.id}/pin`, { userId: user.id });
+            await axios.put(`/api/notes/${note.id}/pin`, { userId: user.id });
             fetchNotes(user.id, filter === 'all' ? undefined : filter);
         } catch (err) { console.error(err); }
     };
@@ -137,7 +137,7 @@ export default function InstructorNotesPage() {
     const handleDeleteNote = async (noteId: number) => {
         if (!confirm(t('confirm_delete_note'))) return;
         try {
-            await axios.delete(`http://localhost:3001/api/notes/${noteId}?userId=${user.id}`);
+            await axios.delete(`/api/notes/${noteId}?userId=${user.id}`);
             fetchNotes(user.id, filter === 'all' ? undefined : filter);
         } catch (err) { console.error(err); }
     };

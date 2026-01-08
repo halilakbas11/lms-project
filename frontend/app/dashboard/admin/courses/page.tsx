@@ -41,8 +41,8 @@ export default function AdminCoursesPage() {
     const fetchData = async () => {
         try {
             const [coursesRes, usersRes] = await Promise.all([
-                axios.get('http://localhost:3001/api/courses'),
-                axios.get('http://localhost:3001/api/users')
+                axios.get('/api/courses'),
+                axios.get('/api/users')
             ]);
             setCourses(coursesRes.data);
             setInstructors(usersRes.data.filter((u: any) => u.role === 'instructor'));
@@ -73,9 +73,9 @@ export default function AdminCoursesPage() {
         e.preventDefault();
         try {
             if (editingCourse) {
-                await axios.put(`http://localhost:3001/api/courses/${editingCourse.id}`, formData);
+                await axios.put(`/api/courses/${editingCourse.id}`, formData);
             } else {
-                await axios.post('http://localhost:3001/api/courses', formData);
+                await axios.post('/api/courses', formData);
             }
             setShowModal(false);
             fetchData();
@@ -87,7 +87,7 @@ export default function AdminCoursesPage() {
     const handleDelete = async (id: number) => {
         if (confirm(t('confirm_delete'))) {
             try {
-                await axios.delete(`http://localhost:3001/api/courses/${id}`);
+                await axios.delete(`/api/courses/${id}`);
                 fetchData();
             } catch (err: any) {
                 alert(err.response?.data?.message || t('error_delete'));

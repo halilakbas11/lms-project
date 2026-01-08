@@ -70,7 +70,7 @@ export default function CourseDetailPage() {
     const fetchCourseData = async () => {
         try {
             // Fetch course details
-            const coursesRes = await axios.get('http://localhost:3001/api/courses');
+            const coursesRes = await axios.get('/api/courses');
             const foundCourse = coursesRes.data.find((c: any) => c.id === parseInt(courseId));
             setCourse(foundCourse);
 
@@ -86,12 +86,12 @@ export default function CourseDetailPage() {
             }
 
             // Fetch course exams
-            const examsRes = await axios.get(`http://localhost:3001/api/courses/${courseId}/exams`);
+            const examsRes = await axios.get(`/api/courses/${courseId}/exams`);
             setExams(examsRes.data);
 
             // Fetch enrolled students
             try {
-                const studentsRes = await axios.get(`http://localhost:3001/api/courses/${courseId}/students`);
+                const studentsRes = await axios.get(`/api/courses/${courseId}/students`);
                 setStudents(studentsRes.data);
             } catch {
                 setStudents([]);
@@ -132,7 +132,7 @@ export default function CourseDetailPage() {
 
     const handleSaveCourseSettings = async () => {
         try {
-            await axios.put(`http://localhost:3001/api/courses/${courseId}`, editCourseForm);
+            await axios.put(`/api/courses/${courseId}`, editCourseForm);
             setShowEditCourseModal(false);
             fetchCourseData();
         } catch (err) {
@@ -143,7 +143,7 @@ export default function CourseDetailPage() {
     const handleRemoveStudent = async (studentId: number) => {
         if (!confirm(t('remove_student_confirm'))) return;
         try {
-            await axios.delete(`http://localhost:3001/api/courses/${courseId}/students/${studentId}`);
+            await axios.delete(`/api/courses/${courseId}/students/${studentId}`);
             fetchCourseData();
         } catch (err) {
             alert(t('remove_error'));

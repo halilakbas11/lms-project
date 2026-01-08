@@ -35,12 +35,12 @@ export default function InstructorCoursesPage() {
 
     const fetchInstructorCourses = async (instructorId: number) => {
         try {
-            const res = await axios.get(`http://localhost:3001/api/instructor/${instructorId}/courses`);
+            const res = await axios.get(`/api/instructor/${instructorId}/courses`);
             setCourses(res.data);
         } catch (err) {
             // Fallback: get all courses and filter
             try {
-                const res = await axios.get('http://localhost:3001/api/courses');
+                const res = await axios.get('/api/courses');
                 const filtered = res.data.filter((c: any) => c.instructorId === instructorId || c.instructor?.id === instructorId);
                 setCourses(filtered);
             } catch (e) {
