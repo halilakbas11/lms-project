@@ -421,6 +421,9 @@ export const translations = {
         // Grades
         no_grades_yet: 'Henüz not bulunmuyor',
         take_exams_to_see_grades: 'Notlarınızı görmek için sınav girin',
+
+        // Export
+        pdf_export_coming_soon: 'PDF dışa aktarma yakında gelecek!',
     },
 
     en: {
@@ -839,6 +842,9 @@ export const translations = {
         // Grades
         no_grades_yet: 'No grades yet',
         take_exams_to_see_grades: 'Take exams to see your grades here',
+
+        // Export
+        pdf_export_coming_soon: 'PDF export coming soon!',
     },
 
     jp: {
@@ -1262,6 +1268,9 @@ export const translations = {
         // Grades
         no_grades_yet: 'まだ成績がありません',
         take_exams_to_see_grades: '成績を表示するには試験を受けてください',
+
+        // Export
+        pdf_export_coming_soon: 'PDFエクスポートは近日公開予定！',
     }
 };
 
