@@ -951,9 +951,12 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           // Bubble okuma - ERROR TOLERANCE ile
           const answers = {};
           const confidences = {};
-          const startY = 150;
+          // Center the grid in 600x800 image
+          // Grid width approx 200px (5 cols * 45 gap). Center X = (600-200)/2 = 200
+          // Grid top margin increased to push it to visual center
+          const startY = 200;
           const gapY = 60;
-          const startX = 60;
+          const startX = 200;
           const gapX = 45;
 
           let totalConfidence = 0;
