@@ -868,7 +868,11 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
 
       Jimp.read(buffer)
         .then(async image => {
-          // ===== PERSPEKTİF DÜZELTME =====
+          // ===== PERSPEKTİF DÜZELTME (İPTAL EDİLDİ - User Request) =====
+          // Kullanıcı "resim yamuluyor" dediği için iptal ettik. 
+          // Artık direkt çekilen resim işlenecek.
+
+          /*
           // 1. Köşe Tespiti (Corner Detection)
           const corners = detectFormCorners(image);
 
@@ -880,6 +884,7 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
               image.rotate(-skewAngle, false); // Eğikliği düzelt
             }
           }
+          */
 
           // 3. Standart boyuta getir (Hizalama için)
           image.resize(600, 800);
