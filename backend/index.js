@@ -1028,58 +1028,79 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           const width = image.bitmap.width;
           const height = image.bitmap.height;
 
-          // ... (Burada daha önce eklediğim Adaptive Threshold kodları olacak) ...
           // Özet geçiyorum çünkü tam kod çok uzun ve duplicate etmek istemiyorum
           // Eski, basit mantığı koruyorum ama biraz iyileştirmiştim.
 
           // Basit, hızlı Jimp mantığı (Legacy)
-          image.grayscale().contrast(0.2);
+          // 4-Column Layout Logic (Matches Python Service)
 
-          const startX = width * 0.333;
-          const startY = height * 0.25;
-          const gridWidth = width * 0.30;
-          const gridHeight = height * 0.675;
-          const gapX = gridWidth / 4;
-          const gapY = gridHeight / (questionCount - 1 || 1);
-          const scanSize = Math.floor(Math.min(gapX, gapY) * 0.35);
+          // Form Dimensions (Based on user image)
+          const HEADER_RATIO = 0.40; // Top 40% is header
+          const MARGIN_X = 0.05; // 5% margin
+
+          const answerAreaY = Math.floor(height * HEADER_RATIO);
+          const answerAreaH = height - answerAreaY - Math.floor(height * 0.05);
+          const columnWidth = (width * (1 - 2 * MARGIN_X)) / 4;
 
           const answers = {};
           let questionsRead = 0;
+          const ROWS_PER_COL = 10;
+          const totalQuestions = Math.min(questionCount, 40);
 
-          for (let q = 1; q <= questionCount; q++) {
-            let bestOpt = null;
-            let maxFill = 0;
-            let secondBestFill = 0;
+          image.grayscale().contrast(0.2);
 
-            ['A', 'B', 'C', 'D', 'E'].forEach((opt, idx) => {
-              const bx = Math.floor(startX + (idx * gapX));
-              const by = Math.floor(startY + ((q - 1) * gapY));
+          // Iterate 4 columns
+          for (let colIdx = 0; colIdx < 4; colIdx++) {
+            const colStartX = Math.floor((width * MARGIN_X) + (colIdx * columnWidth));
+            const startQ = (colIdx * ROWS_PER_COL) + 1;
 
-              let darkPixels = 0;
-              let totalPixels = 0;
-              if (bx >= 0 && by >= 0 && bx + scanSize < width && by + scanSize < height) {
-                image.scan(bx, by, scanSize, scanSize, function (x, y, idx) {
-                  const b = this.bitmap.data[idx];
-                  totalPixels++;
-                  if (b < 120) darkPixels++; // Fixed threshold for legacy
-                });
+            if (startQ > totalQuestions) break;
+
+            const rowHeight = answerAreaH / ROWS_PER_COL;
+            const bubbleGapX = (columnWidth * 0.8) / 4;
+            const bubbleStartXOffset = columnWidth * 0.1;
+            const scanSize = Math.floor(Math.min(bubbleGapX, rowHeight) * 0.25);
+
+            for (let r = 0; r < ROWS_PER_COL; r++) {
+              const qNum = startQ + r;
+              if (qNum > totalQuestions) break;
+
+              const cy = Math.floor(answerAreaY + (r * rowHeight) + (rowHeight / 2));
+
+              let bestOpt = null;
+              let maxFill = 0;
+              let secondBestFill = 0;
+
+              ['A', 'B', 'C', 'D', 'E'].forEach((opt, idx) => {
+                const cx = Math.floor(colStartX + bubbleStartXOffset + (idx * bubbleGapX));
+
+                let darkPixels = 0;
+                let totalPixels = 0;
+
+                if (cx >= 0 && cy >= 0 && cx + scanSize < width && cy + scanSize < height) {
+                  image.scan(cx, cy, scanSize, scanSize, function (x, y, idx) {
+                    const b = this.bitmap.data[idx];
+                    totalPixels++;
+                    if (b < 120) darkPixels++;
+                  });
+                }
+
+                const fill = totalPixels > 0 ? darkPixels / totalPixels : 0;
+                if (fill > maxFill) {
+                  secondBestFill = maxFill;
+                  maxFill = fill;
+                  bestOpt = opt;
+                } else if (fill > secondBestFill) {
+                  secondBestFill = fill;
+                }
+              });
+
+              if (bestOpt && maxFill > 0.25 && (maxFill - secondBestFill) > 0.10) {
+                answers[qNum] = bestOpt;
+                questionsRead++;
+              } else {
+                answers[qNum] = null;
               }
-              const fill = totalPixels > 0 ? darkPixels / totalPixels : 0;
-
-              if (fill > maxFill) {
-                secondBestFill = maxFill;
-                maxFill = fill;
-                bestOpt = opt;
-              } else if (fill > secondBestFill) {
-                secondBestFill = fill;
-              }
-            });
-
-            if (bestOpt && maxFill > 0.15 && (maxFill - secondBestFill) > 0.10) {
-              answers[q] = bestOpt;
-              questionsRead++;
-            } else {
-              answers[q] = null;
             }
           }
 
