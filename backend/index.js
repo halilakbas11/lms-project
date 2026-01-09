@@ -1033,19 +1033,19 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           const width = image.bitmap.width;
           const height = image.bitmap.height;
 
-          // 1-Column Layout Logic (Expanded Spacing)
-          // Header is top ~22%
-          const HEADER_RATIO = 0.22;
-          const MARGIN_X = 0.10; // Left/Right margins are 10% (Width 80%)
+          // 1-Column Layout Logic (5 Questions)
+          // Header is top ~30%
+          const HEADER_RATIO = 0.30;
+          const MARGIN_X = 0.10;
 
           const answerAreaY = Math.floor(height * HEADER_RATIO);
-          const answerAreaH = Math.floor(height * 0.70); // Distinct 70% height area
+          const answerAreaH = Math.floor(height * 0.65); // Questions area
           const contentWidth = width * (1 - 2 * MARGIN_X);
 
           const answers = {};
           let questionsRead = 0;
-          const ROWS_PER_COL = 10; // Supports up to 10 questions for now
-          const totalQuestions = Math.min(questionCount, 10);
+          const ROWS_PER_COL = 5; // Updated to 5 questions based on image
+          const totalQuestions = Math.min(questionCount, 5);
 
           image.grayscale().contrast(0.4);
 

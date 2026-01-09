@@ -63,14 +63,14 @@ export const OpticalCamera: React.FC<OpticalCameraProps> = ({
                         <View style={{
                             position: 'absolute',
                             left: '10%',
-                            top: '22%',
+                            top: '30%',
                             width: '80%',
-                            height: '70%',
+                            height: '65%',
                             flexDirection: 'column',
                             justifyContent: 'space-between'
                         }}>
-                            {/* Draw 10 Rows (Single Column) */}
-                            {[...Array(10)].map((_, rowIdx) => (
+                            {/* Draw 5 Rows (Matches User Form) */}
+                            {[...Array(5)].map((_, rowIdx) => (
                                 <View key={rowIdx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10 }}>
                                     {/* Draw 5 Options (A-E) */}
                                     {[...Array(5)].map((_, optIdx) => (
