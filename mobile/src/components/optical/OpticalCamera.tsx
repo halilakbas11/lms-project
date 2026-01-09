@@ -62,21 +62,28 @@ export const OpticalCamera: React.FC<OpticalCameraProps> = ({
                     <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]} pointerEvents="none">
                         <View style={{
                             position: 'absolute',
-                            left: '33.3%',
-                            top: '25%',
-                            width: '30%',
-                            height: '67.5%',
-                            flexDirection: 'column',
+                            left: '5%',
+                            top: '40%',
+                            width: '90%',
+                            height: '55%',
+                            flexDirection: 'row',
                             justifyContent: 'space-between'
                         }}>
-                            {/* Draw 10 rows of bubbles for alignment */}
-                            {[...Array(10)].map((_, rowIndex) => (
-                                <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                    {[...Array(5)].map((_, colIndex) => (
-                                        <View key={colIndex} style={{
-                                            width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'red',
-                                            backgroundColor: 'rgba(255,0,0,0.2)'
-                                        }} />
+                            {/* Draw 4 Columns */}
+                            {[...Array(4)].map((_, colIdx) => (
+                                <View key={colIdx} style={{ width: '22%', height: '100%', justifyContent: 'space-between' }}>
+                                    {/* Draw 10 Rows per column */}
+                                    {[...Array(10)].map((_, rowIdx) => (
+                                        <View key={rowIdx} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                            {/* Draw 5 Options (A-E) */}
+                                            {[...Array(5)].map((_, optIdx) => (
+                                                <View key={optIdx} style={{
+                                                    width: 8, height: 8, borderRadius: 4,
+                                                    backgroundColor: 'rgba(0,255,0,0.3)', // Green dots for options
+                                                    borderWidth: 1, borderColor: 'rgba(0,255,0,0.5)'
+                                                }} />
+                                            ))}
+                                        </View>
                                     ))}
                                 </View>
                             ))}

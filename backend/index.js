@@ -1028,15 +1028,10 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           const width = image.bitmap.width;
           const height = image.bitmap.height;
 
-          // Özet geçiyorum çünkü tam kod çok uzun ve duplicate etmek istemiyorum
-          // Eski, basit mantığı koruyorum ama biraz iyileştirmiştim.
-
-          // Basit, hızlı Jimp mantığı (Legacy)
-          // 4-Column Layout Logic (Matches Python Service)
-
-          // Form Dimensions (Based on user image)
-          const HEADER_RATIO = 0.40; // Top 40% is header
-          const MARGIN_X = 0.05; // 5% margin
+          // 4-Column Layout Logic
+          // The form header is top 40%. Answer area is bottom 60%.
+          const HEADER_RATIO = 0.40;
+          const MARGIN_X = 0.05;
 
           const answerAreaY = Math.floor(height * HEADER_RATIO);
           const answerAreaH = height - answerAreaY - Math.floor(height * 0.05);
@@ -1047,7 +1042,7 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           const ROWS_PER_COL = 10;
           const totalQuestions = Math.min(questionCount, 40);
 
-          image.grayscale().contrast(0.2);
+          image.grayscale().contrast(0.4); // Increase contrast for better black detection
 
           // Iterate 4 columns
           for (let colIdx = 0; colIdx < 4; colIdx++) {
@@ -1057,9 +1052,9 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
             if (startQ > totalQuestions) break;
 
             const rowHeight = answerAreaH / ROWS_PER_COL;
-            const bubbleGapX = (columnWidth * 0.8) / 4;
-            const bubbleStartXOffset = columnWidth * 0.1;
-            const scanSize = Math.floor(Math.min(bubbleGapX, rowHeight) * 0.25);
+            const bubbleGapX = (columnWidth * 0.8) / 4; // Distance between options
+            const bubbleStartXOffset = columnWidth * 0.1; // Offset from col start
+            const scanSize = Math.floor(Math.min(bubbleGapX, rowHeight) * 0.20); // Scan 20% of the box
 
             for (let r = 0; r < ROWS_PER_COL; r++) {
               const qNum = startQ + r;
@@ -1079,9 +1074,9 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
 
                 if (cx >= 0 && cy >= 0 && cx + scanSize < width && cy + scanSize < height) {
                   image.scan(cx, cy, scanSize, scanSize, function (x, y, idx) {
-                    const b = this.bitmap.data[idx];
+                    const b = this.bitmap.data[idx]; // Gray value
                     totalPixels++;
-                    if (b < 120) darkPixels++;
+                    if (b < 100) darkPixels++; // Dark threshold
                   });
                 }
 
@@ -1095,6 +1090,8 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
                 }
               });
 
+              // Confidence Thresholds
+              // At least 25% filled, and 10% more generic than the second best option
               if (bestOpt && maxFill > 0.25 && (maxFill - secondBestFill) > 0.10) {
                 answers[qNum] = bestOpt;
                 questionsRead++;
@@ -1104,21 +1101,28 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
             }
           }
 
-          // Debug image
-          image.getBase64(Jimp.MIME_JPEG, (err, b64) => {
-            resolve({
-              valid: true,
-              answers,
-              debugImage: b64.replace(/^data:image\/\w+;base64,/, ""),
-              metadata: { questionsRead, method: 'legacy_jimp' }
-            });
+          // Generate Debug Image
+          // We can't easily draw on it in valid base64 without complex steps in Jimp, 
+          // but we can return the base64 of the processed (gray/contrast) image.
+          const debugBase64 = await image.getBase64Async(Jimp.MIME_JPEG);
+          const cleanBase64 = debugBase64.replace(/^data:image\/\w+;base64,/, "");
+
+          resolve({
+            valid: true,
+            answers,
+            debugImage: cleanBase64,
+            metadata: { method: 'nodejs_jimp_v3' }
           });
-        })
-        .catch(err => resolve({ valid: false, reason: err.message }));
-    } catch (err) {
-      resolve({ valid: false, reason: err.message });
-    }
-  });
+
+        } catch (err) {
+          console.error("Jimp Processing Error:", err);
+          resolve({ valid: false, reason: "Görüntü işlenirken hata oluştu: " + err.message });
+        }
+    }).catch(err => {
+      console.error("Jimp Read Error:", err);
+      resolve({ valid: false, reason: "Dosya okunamadı." });
+    });
+});
 }
 
 
@@ -1146,19 +1150,10 @@ app.post('/api/exams/:id/submit', express.json({ limit: '50mb' }), async (req, r
       let questionCount = Math.min(exam.Questions.length, 40); // Max 40 questions supported
       if (questionCount === 0) questionCount = 10;
 
-      // Görüntüyü gerçek analizden geçir
-      let analysis;
-      try {
-        analysis = await analyzeAndReadForm(opticalImage, questionCount);
-      } catch (innerError) {
-        console.error("ANALYZER CRASH:", innerError);
-        // CRITICAL FAIL-SAFE: If analyzer crashes, return a dummy result to keep app running
-        analysis = {
-          valid: true,
-          answers: {},
-          metadata: { method: 'failsafe_crash_recovery' }
-        };
-      }
+
+      // Görüntüyü analiz et (PURE NODE.JS / JIMP)
+      // Python servisi devre dışı bırakıldı.
+      const analysis = await analyzeAndReadForm(opticalImage, questionCount);
 
       if (!analysis.valid) {
         console.log(`❌ Analiz Başarısız: ${analysis.reason}`);
