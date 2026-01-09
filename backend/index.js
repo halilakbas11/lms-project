@@ -1020,16 +1020,20 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
   // 2. LEGACY JIMP IMPLEMENTATION (Fallback)
   return new Promise((resolve, reject) => {
     try {
-      const buffer = Buffer.from(base64Image.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+      if (!base64Image || typeof base64Image !== 'string') {
+        return resolve({ valid: false, reason: "Görüntü verisi boş veya geçersiz." });
+      }
 
-      Jimp.read(buffer)
-        .then(async image => {
-          // ... (Eski OMR mantığı - Adaptive Threshold eklenmiş hali) ...
+      // Remove header if present
+      const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      Jimp.read(buffer).then(image => {
+        try {
           const width = image.bitmap.width;
           const height = image.bitmap.height;
 
           // 4-Column Layout Logic
-          // The form header is top 40%. Answer area is bottom 60%.
           const HEADER_RATIO = 0.40;
           const MARGIN_X = 0.05;
 
@@ -1042,9 +1046,8 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           const ROWS_PER_COL = 10;
           const totalQuestions = Math.min(questionCount, 40);
 
-          image.grayscale().contrast(0.4); // Increase contrast for better black detection
+          image.grayscale().contrast(0.4);
 
-          // Iterate 4 columns
           for (let colIdx = 0; colIdx < 4; colIdx++) {
             const colStartX = Math.floor((width * MARGIN_X) + (colIdx * columnWidth));
             const startQ = (colIdx * ROWS_PER_COL) + 1;
@@ -1052,9 +1055,9 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
             if (startQ > totalQuestions) break;
 
             const rowHeight = answerAreaH / ROWS_PER_COL;
-            const bubbleGapX = (columnWidth * 0.8) / 4; // Distance between options
-            const bubbleStartXOffset = columnWidth * 0.1; // Offset from col start
-            const scanSize = Math.floor(Math.min(bubbleGapX, rowHeight) * 0.20); // Scan 20% of the box
+            const bubbleGapX = (columnWidth * 0.8) / 4;
+            const bubbleStartXOffset = columnWidth * 0.1;
+            const scanSize = Math.floor(Math.min(bubbleGapX, rowHeight) * 0.20);
 
             for (let r = 0; r < ROWS_PER_COL; r++) {
               const qNum = startQ + r;
@@ -1074,9 +1077,9 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
 
                 if (cx >= 0 && cy >= 0 && cx + scanSize < width && cy + scanSize < height) {
                   image.scan(cx, cy, scanSize, scanSize, function (x, y, idx) {
-                    const b = this.bitmap.data[idx]; // Gray value
+                    const b = this.bitmap.data[idx];
                     totalPixels++;
-                    if (b < 100) darkPixels++; // Dark threshold
+                    if (b < 100) darkPixels++;
                   });
                 }
 
@@ -1090,8 +1093,6 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
                 }
               });
 
-              // Confidence Thresholds
-              // At least 25% filled, and 10% more generic than the second best option
               if (bestOpt && maxFill > 0.25 && (maxFill - secondBestFill) > 0.10) {
                 answers[qNum] = bestOpt;
                 questionsRead++;
@@ -1101,28 +1102,36 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
             }
           }
 
-          // Generate Debug Image
-          // We can't easily draw on it in valid base64 without complex steps in Jimp, 
-          // but we can return the base64 of the processed (gray/contrast) image.
-          const debugBase64 = await image.getBase64Async(Jimp.MIME_JPEG);
-          const cleanBase64 = debugBase64.replace(/^data:image\/\w+;base64,/, "");
-
-          resolve({
-            valid: true,
-            answers,
-            debugImage: cleanBase64,
-            metadata: { method: 'nodejs_jimp_v3' }
+          // Use Classic Callback (Safer for older Jimp versions)
+          image.getBase64(Jimp.MIME_JPEG, (err, resBase64) => {
+            if (err) {
+              console.error("Jimp getBase64 Error:", err);
+              // Still resolve as valid, but without debug image
+              resolve({ valid: true, answers, debugImage: "", metadata: { method: 'nodejs_jimp_safe' } });
+            } else {
+              const cleanBase64 = resBase64.replace(/^data:image\/\w+;base64,/, "");
+              resolve({
+                valid: true,
+                answers,
+                debugImage: cleanBase64,
+                metadata: { method: 'nodejs_jimp_safe' }
+              });
+            }
           });
 
         } catch (err) {
           console.error("Jimp Processing Error:", err);
           resolve({ valid: false, reason: "Görüntü işlenirken hata oluştu: " + err.message });
         }
-    }).catch(err => {
-      console.error("Jimp Read Error:", err);
-      resolve({ valid: false, reason: "Dosya okunamadı." });
-    });
-});
+      }).catch(err => {
+        console.error("Jimp Read Error:", err);
+        resolve({ valid: false, reason: "Dosya okunamadı." });
+      });
+    } catch (e) {
+      console.error("OMR Fatal Error:", e);
+      resolve({ valid: false, reason: "Kritik OMR Hatası" });
+    }
+  });
 }
 
 
