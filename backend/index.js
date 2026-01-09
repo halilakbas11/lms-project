@@ -1033,13 +1033,13 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           const width = image.bitmap.width;
           const height = image.bitmap.height;
 
-          // 1-Column Layout Logic (Based on uploaded image)
-          // Header is top ~25%
-          const HEADER_RATIO = 0.25;
-          const MARGIN_X = 0.15; // Left/Right margins are wider in single column
+          // 1-Column Layout Logic (Expanded Spacing)
+          // Header is top ~22%
+          const HEADER_RATIO = 0.22;
+          const MARGIN_X = 0.10; // Left/Right margins are 10% (Width 80%)
 
           const answerAreaY = Math.floor(height * HEADER_RATIO);
-          const answerAreaH = height - answerAreaY - Math.floor(height * 0.10);
+          const answerAreaH = Math.floor(height * 0.70); // Distinct 70% height area
           const contentWidth = width * (1 - 2 * MARGIN_X);
 
           const answers = {};

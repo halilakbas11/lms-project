@@ -62,10 +62,10 @@ export const OpticalCamera: React.FC<OpticalCameraProps> = ({
                     <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]} pointerEvents="none">
                         <View style={{
                             position: 'absolute',
-                            left: '15%',
-                            top: '25%',
-                            width: '70%',
-                            height: '65%',
+                            left: '10%',
+                            top: '22%',
+                            width: '80%',
+                            height: '70%',
                             flexDirection: 'column',
                             justifyContent: 'space-between'
                         }}>
