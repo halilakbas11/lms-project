@@ -44,72 +44,63 @@ def four_point_transform(image, pts):
     warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
     return warped
 
+
 def process_omr(base64_image, question_count=10):
     """
     Optik formu işler (4 Sütunlu Yapı İçin).
     """
-    image = base64_to_image(base64_image)
-    if image is None:
-        return {"success": False, "error": "Geçersiz resim formatı"}
-
     try:
+        image = base64_to_image(base64_image)
+        if image is None:
+            return {"success": False, "error": "Geçersiz resim formatı (Base64 decode hatası)"}
+
         # 1. Görüntüyü Hazırla
         debug_img = image.copy()
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
-        # Adaptive Threshold (Otsu)
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-        
-        # 2. Kağıt Algılama (Opsiyonel - Eğer net bir çerçeve varsa)
-        # Şimdilik direkt tüm resmi kağıt kabul ediyoruz veya basit crop yapıyoruz
-        # Kullanıcının gönderdiği formda cevap alanı altta.
+        try:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+        except Exception as cv_err:
+             return {"success": False, "error": f"OpenCV Pre-process Error: {str(cv_err)}"}
         
         h, w = thresh.shape
         
         # Cevap Alanı Tanımı (Formun alt %60'ı)
         # 4 Sütun var. Her sütun ~%25 genişlikte.
         
-        # Parametreler (Göreceli)
-        HEADER_HEIGHT_RATIO = 0.40 # Üst %40 header (QR vb.)
-        MARGIN_X = 0.05 # Yanlardan %5 boşluk
+        HEADER_HEIGHT_RATIO = 0.40 
+        MARGIN_X = 0.05 
         
         answer_area_y = int(h * HEADER_HEIGHT_RATIO)
-        answer_area_h = h - answer_area_y - int(h * 0.05) # Alttan da %5 boşluk bırak
-        
+        answer_area_h = h - answer_area_y - int(h * 0.05)
         column_width = (w * (1 - 2 * MARGIN_X)) / 4
         
         answers = {}
         detected_count = 0
         options = ['A', 'B', 'C', 'D', 'E']
         
-        # Her sütun için döngü (Toplam 4 sütun)
-        # Col 1: 1-10, Col 2: 11-20, Col 3: 21-30, Col 4: 31-40
         ROWS_PER_COL = 10
         total_questions = min(question_count, 40)
         
+        # Güvenlik Kontrolü: Boyutlar çok küçükse hata ver
+        if w < 100 or h < 100:
+             return {"success": False, "error": "Resim çözünürlüğü çok düşük."}
+
         for col_idx in range(4):
-            # Sütun başlangıç X'i
             col_start_x = int((w * MARGIN_X) + (col_idx * column_width))
-            
-            # Bu sütunda taranacak sorular
             start_q = (col_idx * ROWS_PER_COL) + 1
-            end_q = start_q + ROWS_PER_COL - 1
             
             if start_q > total_questions:
                 break
                 
-            # Satır yüksekliği
             row_height = answer_area_h / ROWS_PER_COL
-            
-            # Kabarcık aralığı (Sütun içindeki 5 seçenek)
-            # Sütun içinde seçenekler soldan sağa dizili
-            # Sütun genişliğinin %80'ini kullan, %10 sol padding
-            bubble_gap_x = (column_width * 0.8) / 4 # 5 seçenek arası 4 boşluk
+            bubble_gap_x = (column_width * 0.8) / 4 
             bubble_start_x_offset = column_width * 0.1
             
-            # Kabarcık Tarama Yarıçapı
             scan_r = int(min(bubble_gap_x, row_height) * 0.25)
+            # Yarıçap çok küçükse varsayılan değer ata
+            if scan_r < 3: scan_r = 3
             
             for r in range(ROWS_PER_COL):
                 q_num = start_q + r
@@ -117,19 +108,14 @@ def process_omr(base64_image, question_count=10):
                     break
                     
                 row_bubbles = []
-                
-                # Satır Y'si
                 cy = int(answer_area_y + (r * row_height) + (row_height / 2))
                 
                 for i, opt in enumerate(options):
-                    # Seçenek X'i
                     cx = int(col_start_x + bubble_start_x_offset + (i * bubble_gap_x))
                     
-                    # Sınır kontrolü
                     if cx < scan_r or cy < scan_r or cx >= w - scan_r or cy >= h - scan_r:
                         continue
                         
-                    # Maske ile doluluk hesapla
                     mask = np.zeros(thresh.shape, dtype="uint8")
                     cv2.circle(mask, (cx, cy), scan_r, 255, -1)
                     
@@ -138,48 +124,43 @@ def process_omr(base64_image, question_count=10):
                     fill_ratio = mask_pixels / total_pixels if total_pixels > 0 else 0
                     
                     row_bubbles.append((opt, fill_ratio, cx, cy))
-                    
-                    # Debug: Mavi çember (Taranan alan)
                     cv2.circle(debug_img, (cx, cy), scan_r, (255, 0, 0), 1)
 
-                # En doluyu bul
+                if not row_bubbles:
+                    answers[str(q_num)] = None
+                    continue
+
                 row_bubbles.sort(key=lambda x: x[1], reverse=True)
                 best = row_bubbles[0]
                 second = row_bubbles[1] if len(row_bubbles) > 1 else (None, 0, 0, 0)
                 
-                # Karar ver
-                MIN_FILL = 0.25
-                DIFF_MARGIN = 0.10
-                
                 detected_opt = None
                 
-                if best[1] > MIN_FILL and (best[1] - second[1]) > DIFF_MARGIN:
-                    detected_opt = best[0]
-                    # Debug: Yeşil (Seçilen)
-                    cv2.circle(debug_img, (best[2], best[3]), scan_r, (0, 255, 0), 3)
-                elif best[1] > 0.40: # Çok koyu ise farka bakmaksızın al (Belki hepsi biraz koyudur ama bu çok barizdir)
-                    detected_opt = best[0]
-                    cv2.circle(debug_img, (best[2], best[3]), scan_r, (0, 255, 0), 3)
-                else:
-                    # Debug: Kırmızı (Seçim yok)
-                    pass
-                
+                # Basit eşik değeri
+                if best[1] > 0.35: # Min %35 doluluk
+                    if len(row_bubbles) < 2 or (best[1] - second[1] > 0.10):
+                         detected_opt = best[0]
+                         cv2.circle(debug_img, (best[2], best[3]), scan_r, (0, 255, 0), 3)
+
                 answers[str(q_num)] = detected_opt
                 if detected_opt:
                     detected_count += 1
 
-        # Sonuç
-        retval, buffer = cv2.imencode('.jpg', debug_img)
-        debug_base64 = base64.b64encode(buffer).decode('utf-8')
+        try:
+            retval, buffer = cv2.imencode('.jpg', debug_img)
+            debug_base64 = base64.b64encode(buffer).decode('utf-8')
+        except:
+            debug_base64 = "" # Debug resmi oluşturulamazsa boş ver
         
         return {
             "success": True,
             "answers": answers,
             "detected_count": detected_count,
             "debug_image": f"data:image/jpeg;base64,{debug_base64}",
-            "processed_method": "MultiColumn_v1"
+            "processed_method": "MultiColumn_v2_Robust"
         }
 
     except Exception as e:
         import traceback
         return {"success": False, "error": str(e), "trace": traceback.format_exc()}
+
