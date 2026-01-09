@@ -64,18 +64,22 @@ const Course = sequelize.define('Course', {
   // PDF Madde 5.2: Erişim Kontrolü (Tarih/grup/şifre)
   accessCode: { type: DataTypes.STRING, allowNull: true }, // Ders şifresi
   startDate: { type: DataTypes.DATE },
-  endDate: { type: DataTypes.DATE }
+  endDate: { type: DataTypes.DATE },
+
+  // Course Template
+  isTemplate: { type: DataTypes.BOOLEAN, defaultValue: false }
 });
 
 // 3. MODÜL/İÇERİK (PDF Madde 5.2 - İçerik Türleri)
 const Module = sequelize.define('Module', {
   title: { type: DataTypes.STRING, allowNull: false },
   type: {
-    // PDF'teki tüm türler: Video, PDF, SCORM, H5P
-    type: DataTypes.ENUM('video', 'pdf', 'scorm', 'h5p', 'quiz'),
+    // PDF'teki tüm türler: Video, PDF, SCORM, H5P + Text (WYSIWYG)
+    type: DataTypes.ENUM('video', 'pdf', 'scorm', 'h5p', 'quiz', 'text'),
     allowNull: false
   },
-  contentUrl: { type: DataTypes.STRING },
+  contentUrl: { type: DataTypes.STRING }, // For files/videos
+  content: { type: DataTypes.TEXT }, // For WYSIWYG text content
   order: { type: DataTypes.INTEGER, defaultValue: 0 }
 });
 

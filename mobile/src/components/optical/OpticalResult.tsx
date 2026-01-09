@@ -5,6 +5,7 @@ import { opticalStyles as styles } from './styles';
 
 interface OpticalResultProps {
     capturedImage: string | null;
+    debugImage?: string | null;
     selectedStudent: any;
     selectedExam: any;
     detectedScore: number | null;
@@ -19,6 +20,7 @@ interface OpticalResultProps {
 
 export const OpticalResult: React.FC<OpticalResultProps> = ({
     capturedImage,
+    debugImage,
     selectedStudent,
     selectedExam,
     detectedScore,
@@ -75,9 +77,15 @@ export const OpticalResult: React.FC<OpticalResultProps> = ({
 
     return (
         <ScrollView contentContainerStyle={styles.content}>
-            {capturedImage && (
-                <Image source={{ uri: capturedImage }} style={styles.resultImage} resizeMode="cover" />
-            )}
+            <View>
+                {/* Show Debug Image if available (it has the red boxes), otherwise show caught image */}
+                <Image
+                    source={{ uri: debugImage || capturedImage || '' }}
+                    style={styles.resultImage}
+                    resizeMode="contain"
+                />
+                {debugImage && <Text style={{ textAlign: 'center', color: '#fbbf24', fontSize: 12, marginTop: 4 }}>Debugging Modu: Kırmızı kutular sistemin baktığı yerlerdir</Text>}
+            </View>
 
             <View style={styles.resultCard}>
                 <Text style={styles.resultLabel}>{t('student')}</Text>

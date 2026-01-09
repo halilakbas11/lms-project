@@ -121,10 +121,10 @@ export default function ExamSecurityProvider({
                 return false;
             }
 
-            // Alt+Tab (can't fully block but log it)
-            if (e.altKey && e.key === 'Tab') {
-                logViolation('keyboard_shortcut', { key: 'Alt+Tab' });
-            }
+            // Alt+Tab (Allowed)
+            // if (e.altKey && e.key === 'Tab') {
+            //     logViolation('keyboard_shortcut', { key: 'Alt+Tab' });
+            // }
 
             // Ctrl+Shift+S (Screenshot on some systems)
             if (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's')) {

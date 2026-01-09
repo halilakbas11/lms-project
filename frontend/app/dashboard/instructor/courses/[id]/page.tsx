@@ -6,6 +6,7 @@ import { DashboardLayout, PageHeader, StatsCard, EmptyState } from '../../../../
 import Card from '../../../../components/ui/Card';
 import Button from '../../../../components/ui/Button';
 import Modal, { ModalFooter } from '../../../../components/ui/Modal';
+import RichTextEditor from '../../../../components/ui/RichTextEditor';
 import { useLanguage } from '../../../../i18n/LanguageContext';
 
 interface Course {
@@ -36,6 +37,15 @@ interface Student {
     email: string;
 }
 
+interface Module {
+    id: number;
+    title: string;
+    type: 'video' | 'pdf' | 'scorm' | 'h5p' | 'quiz' | 'text';
+    content?: string;
+    contentUrl?: string;
+    order: number;
+}
+
 export default function CourseDetailPage() {
     const { t, language } = useLanguage();
     const params = useParams();
@@ -45,12 +55,14 @@ export default function CourseDetailPage() {
     const [course, setCourse] = useState<Course | null>(null);
     const [exams, setExams] = useState<Exam[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
-    const [activeTab, setActiveTab] = useState<'exams' | 'students' | 'settings'>('exams');
+    const [modules, setModules] = useState<Module[]>([]);
+    const [activeTab, setActiveTab] = useState<'modules' | 'exams' | 'students' | 'settings'>('modules');
     const [loading, setLoading] = useState(true);
 
     // Modals
     const [showEditCourseModal, setShowEditCourseModal] = useState(false);
     const [showEditExamModal, setShowEditExamModal] = useState(false);
+    const [showAddModuleModal, setShowAddModuleModal] = useState(false);
     const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
     // Edit course form
@@ -61,6 +73,20 @@ export default function CourseDetailPage() {
         accessCode: '',
         startDate: '',
         endDate: '',
+        isTemplate: false
+    });
+
+    // New Module Form
+    const [newModule, setNewModule] = useState<{
+        title: string;
+        type: Module['type'];
+        content: string;
+        contentUrl: string;
+    }>({
+        title: '',
+        type: 'text',
+        content: '',
+        contentUrl: ''
     });
 
     useEffect(() => {
@@ -80,6 +106,7 @@ export default function CourseDetailPage() {
                     code: foundCourse.code || '',
                     description: foundCourse.description || '',
                     accessCode: foundCourse.accessCode || '',
+                    isTemplate: foundCourse.isTemplate || false,
                     startDate: foundCourse.startDate ? foundCourse.startDate.split('T')[0] : '',
                     endDate: foundCourse.endDate ? foundCourse.endDate.split('T')[0] : '',
                 });
@@ -95,6 +122,14 @@ export default function CourseDetailPage() {
                 setStudents(studentsRes.data);
             } catch {
                 setStudents([]);
+            }
+
+            // Fetch modules
+            try {
+                const modulesRes = await axios.get(`/api/courses/${courseId}/modules`);
+                setModules(modulesRes.data);
+            } catch {
+                setModules([]);
             }
         } catch (err) {
             console.error(err);
@@ -147,6 +182,27 @@ export default function CourseDetailPage() {
             fetchCourseData();
         } catch (err) {
             alert(t('remove_error'));
+        }
+    };
+
+    const handleCreateModule = async () => {
+        try {
+            await axios.post(`/api/courses/${courseId}/modules`, newModule);
+            setShowAddModuleModal(false);
+            setNewModule({ title: '', type: 'text', content: '', contentUrl: '' });
+            fetchCourseData();
+        } catch (err) {
+            alert(t('create_error'));
+        }
+    };
+
+    const handleDeleteModule = async (moduleId: number) => {
+        if (!confirm(t('delete_confirm'))) return;
+        try {
+            await axios.delete(`/api/modules/${moduleId}`);
+            fetchCourseData();
+        } catch (err) {
+            alert(t('delete_error'));
         }
     };
 
@@ -222,6 +278,7 @@ export default function CourseDetailPage() {
             {/* Tabs */}
             <div className="flex gap-1 mb-6 border-b border-[var(--border-light)]">
                 {([
+                    { key: 'modules', label: t('modules'), icon: '📚' },
                     { key: 'exams', label: t('exams'), icon: '📝' },
                     { key: 'students', label: t('students'), icon: '👥' },
                     { key: 'settings', label: t('settings'), icon: '⚙️' },
@@ -396,6 +453,71 @@ export default function CourseDetailPage() {
                 </div>
             )}
 
+            {/* Tab Content - Modules */}
+            {activeTab === 'modules' && (
+                <div className="space-y-6">
+                    {/* Add Module Button */}
+                    <div className="flex justify-end">
+                        <Button variant="primary" onClick={() => setShowAddModuleModal(true)}>
+                            <PlusIcon /> {t('add_module')}
+                        </Button>
+                    </div>
+
+                    {modules.length === 0 ? (
+                        <EmptyState
+                            title={t('no_modules_title')}
+                            description={t('no_modules_desc')}
+                            icon={<BookIcon />}
+                        />
+                    ) : (
+                        <div className="space-y-4">
+                            {modules.map((module, index) => (
+                                <Card
+                                    key={module.id}
+                                    className="animate-slide-up group"
+                                    style={{ animationDelay: `${index * 50}ms` } as React.CSSProperties}
+                                >
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
+                                                {module.type === 'video' ? '🎥' :
+                                                    module.type === 'pdf' ? '📄' :
+                                                        module.type === 'text' ? '📝' : '📦'}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-[var(--text-primary)]">{module.title}</h3>
+                                                <span className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)] uppercase">
+                                                    {module.type}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {/* Preview/Edit buttons could go here */}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                onClick={() => handleDeleteModule(module.id)}
+                                            >
+                                                <TrashIcon />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* Preview Content (Text Type) */}
+                                    {module.type === 'text' && module.content && (
+                                        <div
+                                            className="mt-4 p-4 bg-[var(--bg-tertiary)] rounded-lg text-sm prose max-w-none line-clamp-3"
+                                            dangerouslySetInnerHTML={{ __html: module.content }}
+                                        />
+                                    )}
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Tab Content - Settings */}
             {activeTab === 'settings' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -479,6 +601,20 @@ export default function CourseDetailPage() {
                                         onChange={e => setEditCourseForm({ ...editCourseForm, endDate: e.target.value })}
                                     />
                                 </div>
+                            </div>
+
+                            {/* Template Toggle */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-light)]">
+                                <input
+                                    type="checkbox"
+                                    id="isTemplate"
+                                    className="w-4 h-4 text-blue-600 rounded"
+                                    checked={(editCourseForm as any).isTemplate || false}
+                                    onChange={e => setEditCourseForm({ ...editCourseForm, isTemplate: e.target.checked } as any)}
+                                />
+                                <label htmlFor="isTemplate" className="text-sm font-medium text-[var(--text-primary)]">
+                                    {t('save_as_template') || 'Save as Course Template'}
+                                </label>
                             </div>
                         </div>
                     </Card>
@@ -566,6 +702,73 @@ export default function CourseDetailPage() {
                     <Button variant="primary" onClick={handleSaveCourseSettings}>{t('save')}</Button>
                 </ModalFooter>
             </Modal>
+
+            {/* Add Module Modal */}
+            <Modal
+                isOpen={showAddModuleModal}
+                onClose={() => setShowAddModuleModal(false)}
+                title={t('add_module')}
+                size="lg"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">{t('module_title')}</label>
+                        <input
+                            type="text"
+                            className="input w-full"
+                            value={newModule.title}
+                            onChange={e => setNewModule({ ...newModule, title: e.target.value })}
+                            placeholder="Ex: Week 1: Introduction"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">{t('module_type')}</label>
+                        <div className="flex gap-2">
+                            {['text', 'video', 'pdf'].map((type) => (
+                                <button
+                                    key={type}
+                                    onClick={() => setNewModule({ ...newModule, type: type as any })}
+                                    className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${newModule.type === type
+                                        ? 'bg-blue-50 border-blue-500 text-blue-600'
+                                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {type.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {newModule.type === 'text' ? (
+                        <div>
+                            <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">{t('content')}</label>
+                            <RichTextEditor
+                                value={newModule.content}
+                                onChange={(val: string) => setNewModule({ ...newModule, content: val })}
+                                placeholder="Write your module content here..."
+                            />
+                        </div>
+                    ) : (
+                        <div>
+                            <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+                                {newModule.type === 'video' ? t('video_url') : t('file_url')}
+                            </label>
+                            <input
+                                type="text"
+                                className="input w-full"
+                                value={newModule.contentUrl}
+                                onChange={e => setNewModule({ ...newModule, contentUrl: e.target.value })}
+                                placeholder="https://..."
+                            />
+                        </div>
+                    )}
+                </div>
+                <ModalFooter>
+                    <Button variant="ghost" onClick={() => setShowAddModuleModal(false)}>{t('cancel')}</Button>
+                    <Button variant="primary" onClick={handleCreateModule}>{t('create')}</Button>
+                </ModalFooter>
+            </Modal>
         </DashboardLayout>
     );
 }
@@ -588,6 +791,13 @@ const EditIcon = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+);
+
+const BookIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
     </svg>
 );
 

@@ -64,9 +64,9 @@ function createMainWindow(): void {
         autoHideMenuBar: true
     });
 
-    // Load the web frontend
+    // Load the web frontend - always use remote URL (Vercel)
     const serverUrl = store.get('serverUrl') as string;
-    mainWindow.loadURL(isDev ? serverUrl : `file://${path.join(__dirname, '../renderer/index.html')}`);
+    mainWindow.loadURL(serverUrl);
 
     // Show window when ready
     mainWindow.once('ready-to-show', () => {

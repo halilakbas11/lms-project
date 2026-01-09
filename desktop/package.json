@@ -2,20 +2,18 @@
     "name": "lms-desktop",
     "version": "1.0.0",
     "description": "LMS Desktop Application - Kapsamlı Eğitim Platformu",
-    "main": "dist/main.js",
+    "main": "main.js",
     "author": "LMS Development Team",
     "license": "MIT",
     "scripts": {
-        "dev": "tsc && electron .",
-        "build": "tsc",
+        "dev": "electron .",
         "start": "electron .",
-        "build:win": "npm run build && electron-builder --win",
-        "build:mac": "npm run build && electron-builder --mac",
-        "build:all": "npm run build && electron-builder --win --mac",
+        "build:win": "electron-builder --win",
+        "build:mac": "electron-builder --mac",
+        "build:all": "electron-builder --win --mac",
         "postinstall": "electron-builder install-app-deps"
     },
     "dependencies": {
-        "electron-store": "^8.1.0",
         "electron-updater": "^6.1.7"
     },
     "devDependencies": {

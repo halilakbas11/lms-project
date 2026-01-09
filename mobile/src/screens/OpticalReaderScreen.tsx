@@ -35,6 +35,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
     const [selectedExam, setSelectedExam] = useState<any | null>(null);
     const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [debugImage, setDebugImage] = useState<string | null>(null);
     const [detectedScore, setDetectedScore] = useState<number | null>(null);
     const [detectedAnswers, setDetectedAnswers] = useState<Record<string, string> | null>(null);
     const [manualScore, setManualScore] = useState('');
@@ -137,6 +138,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
                 // Backend successfully analyzed and scored the form
                 setDetectedScore(response.score);
                 setDetectedAnswers(response.answers || null);
+                setDebugImage(response.debugImage || null);
                 setManualScore(response.score?.toString() || '');
                 Alert.alert(
                     t('success'),
@@ -162,43 +164,31 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
         }
     };
 
-    // Error Tolerance: Handle analysis errors with retry mechanism
+    // Error Tolerance: Handle analysis errors
     const handleAnalysisError = (errorMessage: string, base64Image: string) => {
-        if (retryCount < MAX_RETRIES - 1) {
-            // Auto-retry with delay
-            setRetryCount(prev => prev + 1);
-            Alert.alert(
-                t('error'),
-                `${errorMessage}\n\nOtomatik tekrar deneniyor... (${retryCount + 2}/${MAX_RETRIES})`,
-                [
-                    {
-                        text: t('cancel'),
-                        onPress: () => {
-                            setRetryCount(0);
-                            setAnalyzing(false);
-                            setStep('camera');
-                        },
-                        style: 'cancel'
+        setAnalyzing(false);
+        // Show error and ask user what to do (No auto-retry infinite loop)
+        Alert.alert(
+            t('error'),
+            errorMessage,
+            [
+                {
+                    text: t('retry'),
+                    onPress: () => {
+                        setAnalyzing(true);
+                        analyzeOpticalForm(base64Image, true);
                     }
-                ]
-            );
-            // Retry after 1 second
-            setTimeout(() => {
-                analyzeOpticalForm(base64Image, true);
-            }, 1000);
-        } else {
-            // Max retries reached
-            setRetryCount(0);
-            Alert.alert(
-                t('invalid_image_title'),
-                `${errorMessage}\n\n(${MAX_RETRIES} deneme yapıldı)`,
-                [
-                    { text: t('retry'), onPress: () => setStep('camera') },
-                    { text: t('cancel'), onPress: () => setStep('select'), style: 'cancel' }
-                ]
-            );
-            setAnalyzing(false);
-        }
+                },
+                {
+                    text: t('cancel'),
+                    onPress: () => {
+                        setStep('camera');
+                        setCapturedImage(null);
+                    },
+                    style: 'cancel'
+                }
+            ]
+        );
     };
 
     const handleSubmitGrade = async () => {
@@ -218,6 +208,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
                         setStep('select');
                         setSelectedStudent(null);
                         setCapturedImage(null);
+                        setDebugImage(null);
                         setDetectedScore(null);
                         setDetectedAnswers(null);
                     },
@@ -270,8 +261,8 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
                     <Header title="📊 Result" onBack={() => setStep('select')} />
                     <OpticalResult
                         capturedImage={capturedImage}
+                        debugImage={debugImage}
                         selectedStudent={selectedStudent}
-                        selectedExam={selectedExam}
                         selectedExam={selectedExam}
                         detectedScore={detectedScore}
                         detectedAnswers={detectedAnswers}
@@ -279,7 +270,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
                         loading={loading}
                         onManualScoreChange={setManualScore}
                         onSubmit={handleSubmitGrade}
-                        onRetake={() => { setStep('camera'); setCapturedImage(null); }}
+                        onRetake={() => { setStep('camera'); setCapturedImage(null); setDebugImage(null); }}
                     />
                 </>
             )}

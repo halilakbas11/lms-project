@@ -5,6 +5,7 @@ import axios from 'axios';
 import { DashboardLayout, PageHeader, StatsCard, EmptyState } from '../../../components/layout';
 import Card from '../../../components/ui/Card';
 import Button from '../../../components/ui/Button';
+import Modal, { ModalFooter } from '../../../components/ui/Modal';
 import { useLanguage } from '../../../i18n/LanguageContext';
 
 interface Course {
@@ -15,13 +16,17 @@ interface Course {
     instructor?: { id: number; name: string };
     examCount?: number;
     studentCount?: number;
+    isTemplate?: boolean;
 }
 
 export default function InstructorCoursesPage() {
     const { t } = useLanguage();
     const [courses, setCourses] = useState<Course[]>([]);
+    const [templates, setTemplates] = useState<Course[]>([]); // New state for templates
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [newCourseData, setNewCourseData] = useState({ templateId: '', title: '', code: '' });
     const router = useRouter();
 
     useEffect(() => {
@@ -37,17 +42,46 @@ export default function InstructorCoursesPage() {
         try {
             const res = await axios.get(`/api/instructor/${instructorId}/courses`);
             setCourses(res.data);
+
+            // Also fetch templates (all courses marked as template)
+            try {
+                const allCoursesRes = await axios.get('/api/courses');
+                const tpls = allCoursesRes.data.filter((c: any) => c.isTemplate);
+                setTemplates(tpls);
+            } catch (e) {
+                console.error('Failed to fetch templates');
+            }
+
         } catch (err) {
             // Fallback: get all courses and filter
             try {
                 const res = await axios.get('/api/courses');
                 const filtered = res.data.filter((c: any) => c.instructorId === instructorId || c.instructor?.id === instructorId);
                 setCourses(filtered);
+                // Set templates from the same source
+                setTemplates(res.data.filter((c: any) => c.isTemplate));
             } catch (e) {
                 console.error(e);
             }
         }
         setLoading(false);
+    };
+
+    const handleCreateFromTemplate = async () => {
+        if (!newCourseData.templateId || !newCourseData.title) return alert(t('fill_required'));
+        try {
+            const res = await axios.post('/api/courses/from-template', {
+                templateId: newCourseData.templateId,
+                instructorId: user.id,
+                newTitle: newCourseData.title,
+                newCode: newCourseData.code
+            });
+            setShowTemplateModal(false);
+            fetchInstructorCourses(user.id);
+            alert(t('course_created_success'));
+        } catch (err) {
+            alert(t('create_error'));
+        }
     };
 
     if (loading) {
@@ -66,10 +100,15 @@ export default function InstructorCoursesPage() {
                 title={t('my_courses')}
                 description={t('course_list_desc')}
                 actions={
-                    <Button variant="primary" onClick={() => router.push('/dashboard/instructor')}>
-                        <DashboardIcon />
-                        {t('dashboard')}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="secondary" onClick={() => setShowTemplateModal(true)}>
+                            <PlusIcon /> {t('create_from_template') || 'From Template'}
+                        </Button>
+                        <Button variant="primary" onClick={() => router.push('/dashboard/instructor')}>
+                            <DashboardIcon />
+                            {t('dashboard')}
+                        </Button>
+                    </div>
                 }
             />
 
@@ -156,6 +195,59 @@ export default function InstructorCoursesPage() {
                     ))}
                 </div>
             )}
+
+            <Modal
+                isOpen={showTemplateModal}
+                onClose={() => setShowTemplateModal(false)}
+                title={t('create_course_from_template') || 'Create from Template'}
+                size="md"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+                            {t('select_template') || 'Select Template'}
+                        </label>
+                        <select
+                            className="input w-full"
+                            value={newCourseData.templateId}
+                            onChange={(e) => setNewCourseData({ ...newCourseData, templateId: e.target.value })}
+                        >
+                            <option value="">{t('select') || 'Select...'}</option>
+                            {templates.map(t => (
+                                <option key={t.id} value={t.id}>{t.title} ({t.code})</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+                            {t('new_course_title') || 'New Course Title'}
+                        </label>
+                        <input
+                            type="text"
+                            className="input w-full"
+                            value={newCourseData.title}
+                            onChange={(e) => setNewCourseData({ ...newCourseData, title: e.target.value })}
+                            placeholder="e.g. Mathematics 101 - Spring"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+                            {t('new_course_code') || 'New Course Code'}
+                        </label>
+                        <input
+                            type="text"
+                            className="input w-full"
+                            value={newCourseData.code}
+                            onChange={(e) => setNewCourseData({ ...newCourseData, code: e.target.value })}
+                            placeholder="e.g. MATH101-S24"
+                        />
+                    </div>
+                </div>
+                <ModalFooter>
+                    <Button variant="ghost" onClick={() => setShowTemplateModal(false)}>{t('cancel')}</Button>
+                    <Button variant="primary" onClick={handleCreateFromTemplate}>{t('create')}</Button>
+                </ModalFooter>
+            </Modal>
         </DashboardLayout>
     );
 }
@@ -197,5 +289,12 @@ const SettingsIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="12" cy="12" r="3" />
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+);
+
+const PlusIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
 );

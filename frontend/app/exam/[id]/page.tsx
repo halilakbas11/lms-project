@@ -303,7 +303,22 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
                             videoConstraints={{ facingMode: "user" }}
                         />
                     </div>
+
+                    {/* SEB Emergency Quit Button */}
+                    {isSebBrowser && (
+                        <button
+                            onClick={() => {
+                                if (confirm('Güvenli Tarayıcıdan çıkmak istediğinize emin misiniz? Sınavınız sonlandırılacaktır.')) {
+                                    window.location.href = "http://seb-quit";
+                                }
+                            }}
+                            className="ml-4 px-3 py-1 bg-red-700 hover:bg-red-800 text-white text-xs rounded border border-red-500 transition-colors"
+                        >
+                            ÇIKIŞ / QUIT
+                        </button>
+                    )}
                 </div>
+
 
                 {/* Progress Bar */}
                 <div className="bg-white border-b px-4 py-2 sticky top-[56px] z-40">

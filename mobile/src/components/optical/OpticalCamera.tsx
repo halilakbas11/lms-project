@@ -42,26 +42,57 @@ export const OpticalCamera: React.FC<OpticalCameraProps> = ({
     }
 
     return (
-        <View style={{ flex: 1 }}>
-            <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
-            <SafeAreaView style={styles.cameraOverlay}>
-                <TouchableOpacity onPress={onBack} style={styles.cameraBackBtn}>
-                    <Text style={styles.cameraBackText}>←</Text>
-                </TouchableOpacity>
-                <View style={styles.scanGuide}>
-                    <Text style={styles.scanGuideTitle}>📄 {t('optical_reader_title')}</Text>
-                    <Text style={styles.scanGuideText}>{selectedStudent?.name} - {selectedExam?.title}</Text>
-                    <View style={styles.scanFrame}>
-                        <View style={[styles.scanCorner, styles.cornerTL]} />
-                        <View style={[styles.scanCorner, styles.cornerTR]} />
-                        <View style={[styles.scanCorner, styles.cornerBL]} />
-                        <View style={[styles.scanCorner, styles.cornerBR]} />
+        <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center' }}>
+            {/* Camera View Container - Forced to 3:4 ratio to match photo aspect ratio */}
+            <View style={{ width: '100%', aspectRatio: 3 / 4, overflow: 'hidden', borderRadius: 12 }}>
+                <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+
+                {/* Overlay inside camera area for correct alignment */}
+                <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between', padding: 20 }]}>
+                    <TouchableOpacity onPress={onBack} style={styles.cameraBackBtn}>
+                        <Text style={styles.cameraBackText}>←</Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.scanGuide}>
+                        <Text style={styles.scanGuideTitle}>📄 {t('optical_reader_title')}</Text>
+                        <Text style={styles.scanGuideText}>{selectedStudent?.name}</Text>
                     </View>
+
+                    {/* LIVE ALIGNMENT GRID: Moved outside of padded container to match CameraView perfectly */}
+                    <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]} pointerEvents="none">
+                        <View style={{
+                            position: 'absolute',
+                            left: '33.3%',
+                            top: '25%',
+                            width: '30%',
+                            height: '67.5%',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between'
+                        }}>
+                            {/* Draw 10 rows of bubbles for alignment */}
+                            {[...Array(10)].map((_, rowIndex) => (
+                                <View key={rowIndex} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                    {[...Array(5)].map((_, colIndex) => (
+                                        <View key={colIndex} style={{
+                                            width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'red',
+                                            backgroundColor: 'rgba(255,0,0,0.2)'
+                                        }} />
+                                    ))}
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    <TouchableOpacity onPress={onCapture} style={styles.captureButton}>
+                        <View style={styles.captureButtonInner} />
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={onCapture} style={styles.captureButton}>
-                    <View style={styles.captureButtonInner} />
-                </TouchableOpacity>
-            </SafeAreaView>
+            </View>
+
+            {/* Instructional Text outside camera view */}
+            <View style={{ position: 'absolute', bottom: 40, width: '100%', alignItems: 'center' }}>
+                <Text style={{ color: '#94a3b8', fontSize: 12 }}>🔴 Kırmızı yuvarlakları kağıttaki şıklara denk getirin</Text>
+            </View>
         </View>
     );
 };
