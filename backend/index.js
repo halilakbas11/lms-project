@@ -1033,72 +1033,69 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           const width = image.bitmap.width;
           const height = image.bitmap.height;
 
-          // 4-Column Layout Logic
-          const HEADER_RATIO = 0.40;
-          const MARGIN_X = 0.05;
+          // 1-Column Layout Logic (Based on uploaded image)
+          // Header is top ~25%
+          const HEADER_RATIO = 0.25;
+          const MARGIN_X = 0.15; // Left/Right margins are wider in single column
 
           const answerAreaY = Math.floor(height * HEADER_RATIO);
-          const answerAreaH = height - answerAreaY - Math.floor(height * 0.05);
-          const columnWidth = (width * (1 - 2 * MARGIN_X)) / 4;
+          const answerAreaH = height - answerAreaY - Math.floor(height * 0.10);
+          const contentWidth = width * (1 - 2 * MARGIN_X);
 
           const answers = {};
           let questionsRead = 0;
-          const ROWS_PER_COL = 10;
-          const totalQuestions = Math.min(questionCount, 40);
+          const ROWS_PER_COL = 10; // Supports up to 10 questions for now
+          const totalQuestions = Math.min(questionCount, 10);
 
           image.grayscale().contrast(0.4);
 
-          for (let colIdx = 0; colIdx < 4; colIdx++) {
-            const colStartX = Math.floor((width * MARGIN_X) + (colIdx * columnWidth));
-            const startQ = (colIdx * ROWS_PER_COL) + 1;
+          // Single Column Iteration
+          const colStartX = Math.floor(width * MARGIN_X);
 
-            if (startQ > totalQuestions) break;
+          const rowHeight = answerAreaH / ROWS_PER_COL;
+          const bubbleGapX = (contentWidth * 0.8) / 4; // Gap between A-B-C-D-E
+          const bubbleStartXOffset = contentWidth * 0.1;
+          const scanSize = Math.floor(Math.min(bubbleGapX, rowHeight) * 0.25);
 
-            const rowHeight = answerAreaH / ROWS_PER_COL;
-            const bubbleGapX = (columnWidth * 0.8) / 4;
-            const bubbleStartXOffset = columnWidth * 0.1;
-            const scanSize = Math.floor(Math.min(bubbleGapX, rowHeight) * 0.20);
+          for (let r = 0; r < ROWS_PER_COL; r++) {
+            const qNum = r + 1;
+            if (qNum > totalQuestions) break;
 
-            for (let r = 0; r < ROWS_PER_COL; r++) {
-              const qNum = startQ + r;
-              if (qNum > totalQuestions) break;
+            const cy = Math.floor(answerAreaY + (r * rowHeight) + (rowHeight / 2));
 
-              const cy = Math.floor(answerAreaY + (r * rowHeight) + (rowHeight / 2));
+            let bestOpt = null;
+            let maxFill = 0;
+            let secondBestFill = 0;
 
-              let bestOpt = null;
-              let maxFill = 0;
-              let secondBestFill = 0;
+            ['A', 'B', 'C', 'D', 'E'].forEach((opt, idx) => {
+              const cx = Math.floor(colStartX + bubbleStartXOffset + (idx * bubbleGapX));
 
-              ['A', 'B', 'C', 'D', 'E'].forEach((opt, idx) => {
-                const cx = Math.floor(colStartX + bubbleStartXOffset + (idx * bubbleGapX));
+              let darkPixels = 0;
+              let totalPixels = 0;
 
-                let darkPixels = 0;
-                let totalPixels = 0;
-
-                if (cx >= 0 && cy >= 0 && cx + scanSize < width && cy + scanSize < height) {
-                  image.scan(cx, cy, scanSize, scanSize, function (x, y, idx) {
-                    const b = this.bitmap.data[idx];
-                    totalPixels++;
-                    if (b < 100) darkPixels++;
-                  });
-                }
-
-                const fill = totalPixels > 0 ? darkPixels / totalPixels : 0;
-                if (fill > maxFill) {
-                  secondBestFill = maxFill;
-                  maxFill = fill;
-                  bestOpt = opt;
-                } else if (fill > secondBestFill) {
-                  secondBestFill = fill;
-                }
-              });
-
-              if (bestOpt && maxFill > 0.25 && (maxFill - secondBestFill) > 0.10) {
-                answers[qNum] = bestOpt;
-                questionsRead++;
-              } else {
-                answers[qNum] = null;
+              if (cx >= 0 && cy >= 0 && cx + scanSize < width && cy + scanSize < height) {
+                image.scan(cx, cy, scanSize, scanSize, function (x, y, idx) {
+                  const b = this.bitmap.data[idx];
+                  totalPixels++;
+                  if (b < 100) darkPixels++;
+                });
               }
+
+              const fill = totalPixels > 0 ? darkPixels / totalPixels : 0;
+              if (fill > maxFill) {
+                secondBestFill = maxFill;
+                maxFill = fill;
+                bestOpt = opt;
+              } else if (fill > secondBestFill) {
+                secondBestFill = fill;
+              }
+            });
+
+            if (bestOpt && maxFill > 0.25 && (maxFill - secondBestFill) > 0.10) {
+              answers[qNum] = bestOpt;
+              questionsRead++;
+            } else {
+              answers[qNum] = null;
             }
           }
 
@@ -1106,15 +1103,14 @@ async function analyzeAndReadForm(base64Image, questionCount = 10) {
           image.getBase64(Jimp.MIME_JPEG, (err, resBase64) => {
             if (err) {
               console.error("Jimp getBase64 Error:", err);
-              // Still resolve as valid, but without debug image
-              resolve({ valid: true, answers, debugImage: "", metadata: { method: 'nodejs_jimp_safe' } });
+              resolve({ valid: true, answers, debugImage: "", metadata: { method: 'nodejs_1col_v1' } });
             } else {
               const cleanBase64 = resBase64.replace(/^data:image\/\w+;base64,/, "");
               resolve({
                 valid: true,
                 answers,
                 debugImage: cleanBase64,
-                metadata: { method: 'nodejs_jimp_safe' }
+                metadata: { method: 'nodejs_1col_v1' }
               });
             }
           });
