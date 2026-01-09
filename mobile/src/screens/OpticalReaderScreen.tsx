@@ -1,8 +1,6 @@
-// OpticalReaderScreen - SOLID: Single Responsibility for optical form scanning logic
-// Clean Architecture: Presentation layer screen (delegates UI to components)
 
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Alert, StyleSheet } from 'react-native';
+import { View, Alert, StyleSheet, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLanguage } from '../context/LanguageContext';
 import { Header } from '../components';
@@ -34,19 +32,22 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
     const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
     const [selectedExam, setSelectedExam] = useState<any | null>(null);
     const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
+
+    // Result States
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [debugImage, setDebugImage] = useState<string | null>(null);
     const [detectedScore, setDetectedScore] = useState<number | null>(null);
     const [detectedAnswers, setDetectedAnswers] = useState<Record<string, string> | null>(null);
+    const [metadata, setMetadata] = useState<any>(null);
+
     const [manualScore, setManualScore] = useState('');
     const [loading, setLoading] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
-    const [retryCount, setRetryCount] = useState(0);
-    const MAX_RETRIES = 3;
 
     useEffect(() => {
+        if (!permission) requestPermission();
         loadCourses();
-    }, []);
+    }, [permission]);
 
     const loadCourses = async () => {
         try {
@@ -65,22 +66,10 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
         setStudents([]);
 
         try {
-            console.log('OpticalReader: Loading data for course:', course.id);
-
-            // Fetch exams for this course
             const courseExams = await apiService.getCourseExams(course.id);
-            console.log('OpticalReader: Exams loaded:', courseExams);
             setExams(courseExams || []);
-
-            // Fetch students for this course - API returns array directly
-            try {
-                const courseStudents = await apiService.getCourseStudents(course.id);
-                console.log('OpticalReader: Students loaded:', courseStudents);
-                setStudents(courseStudents || []);
-            } catch (studentError) {
-                console.log('OpticalReader: Error loading students (might not have students yet):', studentError);
-                setStudents([]);
-            }
+            const courseStudents = await apiService.getCourseStudents(course.id);
+            setStudents(courseStudents || []);
         } catch (error) {
             console.log('Error loading course data:', error);
         }
@@ -97,15 +86,15 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
     const takePicture = async () => {
         if (cameraRef.current) {
             try {
-                // Disable shutter sound with shutterSound: false
+                // High quality for backend OpenCV
                 const photo = await cameraRef.current.takePictureAsync({
-                    quality: 0.5,
+                    quality: 0.8,
                     base64: true,
                     shutterSound: false
                 });
+
                 if (photo && photo.base64) {
                     setCapturedImage(photo.uri);
-                    // Send base64 image to backend for real OMR analysis
                     analyzeOpticalForm(photo.base64);
                 } else {
                     Alert.alert(t('error'), t('capture_error'));
@@ -116,91 +105,51 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
         }
     };
 
-    const analyzeOpticalForm = async (base64Image: string, isRetry: boolean = false) => {
+    const analyzeOpticalForm = async (base64Image: string) => {
         setStep('analyze');
         setAnalyzing(true);
 
         try {
-            console.log(`OMR: Sending image to backend (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
-
-            // Send the image to backend for real OMR analysis
+            console.log('Sending to Backend Python Service...');
             const response = await apiService.submitOpticalForm(
                 selectedExam!.id,
                 selectedStudent!.id,
                 base64Image
             );
 
-            console.log('OMR: Backend response:', response);
-
             if (response.success) {
-                // Reset retry count on success
-                setRetryCount(0);
-                // Backend successfully analyzed and scored the form
                 setDetectedScore(response.score);
                 setDetectedAnswers(response.answers || null);
-                setDebugImage(response.debugImage || null);
+                // Backend sends debug image with green circles
+                setDebugImage(response.debugImage ? `data:image/jpeg;base64,${response.debugImage}` : null);
+                setMetadata(response.metadata);
+
                 setManualScore(response.score?.toString() || '');
-                Alert.alert(
-                    t('success'),
-                    `${t('form_detected_title')}\n${t('score')}: ${response.score}`,
-                    [{ text: t('understood') }]
-                );
                 setAnalyzing(false);
                 setStep('result');
             } else {
-                // Backend rejected the image (not a valid form)
-                handleAnalysisError(response.message || t('invalid_image_text'), base64Image);
+                handleAnalysisError(response.message || "Okunamadı");
             }
         } catch (error: any) {
-            console.error('OMR: Analysis failed:', error);
-
-            // Extract error message from backend response
-            const errorMessage = error?.response?.data?.message ||
-                error?.response?.data?.reason ||
-                'Optik form algılanamadı. Lütfen formu düzgün çekerek tekrar deneyin.';
-
-            console.log('OMR: Backend message:', errorMessage);
-            handleAnalysisError(errorMessage, base64Image);
+            const msg = error?.response?.data?.message || 'Sunucu hatası. Python servisini kontrol edin.';
+            handleAnalysisError(msg);
         }
     };
 
-    // Error Tolerance: Handle analysis errors
-    const handleAnalysisError = (errorMessage: string, base64Image: string) => {
+    const handleAnalysisError = (msg: string) => {
         setAnalyzing(false);
-        // Show error and ask user what to do (No auto-retry infinite loop)
-        Alert.alert(
-            t('error'),
-            errorMessage,
-            [
-                {
-                    text: t('retry'),
-                    onPress: () => {
-                        setAnalyzing(true);
-                        analyzeOpticalForm(base64Image, true);
-                    }
-                },
-                {
-                    text: t('cancel'),
-                    onPress: () => {
-                        setStep('camera');
-                        setCapturedImage(null);
-                    },
-                    style: 'cancel'
-                }
-            ]
-        );
+        Alert.alert("Hata", msg, [
+            { text: "Tekrar Dene", onPress: () => { setStep('camera'); setCapturedImage(null); } },
+            { text: "İptal", onPress: () => { setStep('select'); setCapturedImage(null); } }
+        ]);
     };
 
     const handleSubmitGrade = async () => {
         const score = manualScore ? parseInt(manualScore) : detectedScore;
-        if (!score || score < 0 || score > 100) {
-            Alert.alert(t('error'), t('enter_valid_score'));
-            return;
-        }
 
         setLoading(true);
         try {
-            await apiService.saveExamResult(selectedExam!.id, selectedStudent!.id, score, true);
+            await apiService.saveExamResult(selectedExam!.id, selectedStudent!.id, score || 0, true);
             Alert.alert(t('success'), t('grade_saved_success'), [
                 {
                     text: t('understood'),
@@ -209,8 +158,6 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
                         setSelectedStudent(null);
                         setCapturedImage(null);
                         setDebugImage(null);
-                        setDetectedScore(null);
-                        setDetectedAnswers(null);
                     },
                 },
             ]);
@@ -220,6 +167,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
         setLoading(false);
     };
 
+    // --- RENDER ---
     return (
         <View style={styles.container}>
             {step === 'select' && (
@@ -258,7 +206,7 @@ export const OpticalReaderScreen: React.FC<OpticalReaderScreenProps> = ({ userId
 
             {step === 'result' && (
                 <>
-                    <Header title="📊 Result" onBack={() => setStep('select')} />
+                    <Header title="📊 Sonuçlar" onBack={() => setStep('select')} />
                     <OpticalResult
                         capturedImage={capturedImage}
                         debugImage={debugImage}
